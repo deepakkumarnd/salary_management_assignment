@@ -1,0 +1,15 @@
+<%# locals: (current:) %>
+<% labels = { organization: "Organization", countries: "Countries", allowances: "Allowances",
+              catalogue: "Departments & roles", finish: "Finish" } %>
+<% current_index = labels.keys.index(current) %>
+<ul class="steps steps-vertical sm:steps-horizontal w-full">
+  <% labels.each_with_index do |(step, label), index| %>
+    <li class="step <%= "step-primary" if index <= current_index %>" <%= "aria-current=step" if step == current %>>
+      <% if step != current && step != :finish && wizard.available?(step) %>
+        <%= link_to label, onboarding_step_path(step), class: "link link-hover" %>
+      <% else %>
+        <%= label %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

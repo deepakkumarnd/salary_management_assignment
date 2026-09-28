@@ -24,11 +24,32 @@ cd salary-management
 bin/setup
 ```
 
-`bin/setup` installs the gems, creates and migrates the development database, clears the logs and temp files, and
-then starts the app. It is safe to re-run at any time. Useful options:
+`bin/setup` installs the gems, creates and migrates the development database, loads the seed data, clears the logs and
+temp files, and then starts the app. It is safe to re-run at any time. Useful options:
 
 - `bin/setup --skip-server` sets everything up without starting the server.
 - `bin/setup --reset` drops and recreates the database.
+
+### Seed data and first sign-in
+
+The seed (`db/seeds.rb`, run by `bin/setup`, or on its own with `bin/rails db:seed`) creates:
+
+- the 8 supported countries and their currencies;
+- the **ACME** organization, with setup left pending;
+- the first HR user, `hr@acme.test`.
+
+The password comes from `SEED_HR_PASSWORD` if it is set. Otherwise a random one is generated and **printed once** in
+the seed output, so keep it. To choose your own:
+
+```sh
+SEED_HR_PASSWORD='choose-a-long-password' bin/rails db:seed
+```
+
+Re-running the seed is safe: nothing is duplicated, and an existing user keeps their password. To start again, run
+`bin/setup --reset`.
+
+The first sign-in opens the **setup wizard**: organization details, operating countries, country allowances, then
+departments and job roles. The rest of the app is available once setup is finished.
 
 ## Running the app
 
@@ -40,14 +61,15 @@ This starts the Rails server and the Tailwind watcher (see `Procfile.dev`). Open
 
 If you run `bin/rails server` on its own, first build the CSS once with `bin/rails tailwindcss:build`.
 
+Emails such as password resets aren't sent in development. Read them at http://localhost:3000/letter_opener.
+
 ## Running the tests
 
 The suite uses RSpec with FactoryBot, Faker, shoulda-matchers and Capybara.
 
 ```sh
-bin/rails tailwindcss:build     # system specs need the compiled CSS
 bundle exec rspec               # all specs
-bundle exec rspec spec/system   # browser flows only (headless Chrome)
+bundle exec rspec spec/system   # browser flows only (headless Chrome); the Tailwind CSS is rebuilt first
 bundle exec rspec --only-failures
 ```
 

@@ -1,0 +1,47 @@
+<%= render layout: "onboarding/step", locals: {
+      step: :finish, title: "Ready to go",
+      intro: "Check the details below, or go back to change them." } do %>
+  <% allowances = @organization.country_allowances.includes(:country).order(:name).group_by(&:country) %>
+  <dl class="grid sm:grid-cols-[12rem_1fr] gap-x-6 gap-y-3">
+    <dt class="font-semibold">Organization</dt>
+    <dd><%= @organization.name %></dd>
+
+    <dt class="font-semibold">Employee IDs</dt>
+    <dd class="font-mono"><%= @organization.employee_code_prefix %>-00001, <%= @organization.employee_code_prefix %>-00002, …</dd>
+
+    <dt class="font-semibold">Standard week</dt>
+    <dd><%= pluralize(@organization.standard_hours_per_week, "hour") %></dd>
+
+    <dt class="font-semibold">Countries</dt>
+    <dd>
+      <ul class="space-y-1">
+        <% @organization.countries.order(:name).each do |country| %>
+          <li>
+            <%= country.name %> <span class="badge badge-ghost badge-sm font-mono"><%= country.currency_code %></span>
+            <% if allowances[country] %>
+              <span class="text-base-content/70">
+                · <%= allowances[country].map { "#{it.name} #{PercentAttribute.format(it.percent_bp, trim: true)}%" }.to_sentence %>
+              </span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </dd>
+
+    <dt class="font-semibold">Departments</dt>
+    <dd><%= @organization.departments.order(:name).pluck(:name).to_sentence %></dd>
+
+    <dt class="font-semibold">Job roles</dt>
+    <dd><%= @organization.job_roles.order(:name).pluck(:name).to_sentence %></dd>
+  </dl>
+
+  <div role="note" class="alert alert-info alert-soft">
+    <span>Next, you'll define pay structures (default basic pay, role allowances, variable pay and overtime) for each
+      country and role, before adding employees.</span>
+  </div>
+
+  <div class="card-actions justify-between items-center pt-2">
+    <%= link_to "Back", edit_onboarding_catalogue_path, class: "btn btn-ghost" %>
+    <%= button_to "Finish setup", onboarding_completion_path, class: "btn btn-primary" %>
+  </div>
+<% end %>

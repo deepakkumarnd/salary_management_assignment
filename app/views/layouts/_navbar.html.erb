@@ -1,0 +1,14 @@
+<nav class="navbar bg-base-100 shadow-sm px-4">
+  <div class="flex-1">
+    <%= link_to current_user.organization.name, authenticated_root_path, class: "btn btn-ghost text-lg" %>
+  </div>
+  <div class="flex-none">
+    <details class="dropdown dropdown-end">
+      <summary class="btn btn-ghost"><%= current_user.full_name %></summary>
+      <ul class="menu dropdown-content bg-base-100 rounded-box z-10 mt-2 w-60 p-2 shadow">
+        <li class="menu-title truncate"><%= current_user.email %></li>
+        <li><%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "w-full text-left" %></li>
+      </ul>
+    </details>
+  </div>
+</nav>

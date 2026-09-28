@@ -1,13 +1,11 @@
-<% content_for :title, "Salary Management" %>
+<% content_for :title, "Home · Salary Management" %>
 
-<div class="hero min-h-[60vh]">
-  <div class="hero-content text-center">
-    <div class="card bg-base-100 shadow-sm">
-      <div class="card-body items-center">
-        <h1 class="card-title text-3xl">Salary Management</h1>
-        <p class="text-base-content/70">Rails, Hotwire, Tailwind and daisyUI are set up.</p>
-        <span class="badge badge-success">Ready</span>
-      </div>
-    </div>
+<div class="card bg-base-100 shadow-sm max-w-2xl">
+  <div class="card-body">
+    <h1 class="card-title text-2xl">Welcome, <%= current_user.full_name %></h1>
+    <p class="text-base-content/70">
+      <%= current_user.organization.name %> is set up. Pay policy, employees, insights and payroll exports will
+      appear here as they are built.
+    </p>
   </div>
 </div>

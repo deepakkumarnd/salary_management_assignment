@@ -1,0 +1,23 @@
+<%= render layout: "onboarding/step", locals: {
+      step: :catalogue, title: "Departments & job roles",
+      intro: "Start from our suggestions and edit freely: one name per line. You need at least one of each." } do %>
+  <%= form_with model: @catalogue, url: onboarding_catalogue_path, method: :patch, class: "space-y-4" do |f| %>
+    <div class="grid md:grid-cols-2 gap-6">
+      <fieldset class="fieldset">
+        <%= f.label :departments, "Departments", class: "fieldset-legend" %>
+        <%= f.text_area :departments, rows: 14, class: input_class(@catalogue, :departments, "textarea") %>
+        <p class="label">One per line</p>
+        <%= field_errors(@catalogue, :departments, full: false) %>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <%= f.label :job_roles, "Job roles", class: "fieldset-legend" %>
+        <%= f.text_area :job_roles, rows: 14, class: input_class(@catalogue, :job_roles, "textarea") %>
+        <p class="label">One per line</p>
+        <%= field_errors(@catalogue, :job_roles, full: false) %>
+      </fieldset>
+    </div>
+
+    <%= render "onboarding/actions", form: f, back: (wizard.available?(:allowances) ? edit_onboarding_allowances_path : edit_onboarding_countries_path) %>
+  <% end %>
+<% end %>

@@ -1,0 +1,8 @@
+<%# Devise also puts non-message values (e.g. timedout: true) in the flash; only notice and alert are shown. %>
+<% { notice: "alert-success", alert: "alert-error" }.each do |type, style| %>
+  <% if flash[type].present? %>
+    <div role="alert" class="alert <%= style %> mb-6">
+      <span><%= flash[type] %></span>
+    </div>
+  <% end %>
+<% end %>

@@ -1,14 +1,25 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  # HR users only: no public sign-up. Lockable unlocks by time, so there are no unlock-by-email pages either.
+  devise_for :users, skip: %i[registrations unlocks]
+
+  authenticated :user do
+    root "home#index", as: :authenticated_root
+  end
+  devise_scope(:user) { root "devise/sessions#new" }
+
+  # Organization setup wizard, shown until setup is complete. GET /onboarding resumes at the current step.
+  namespace :onboarding do
+    root "steps#show"
+    resource :organization, only: %i[edit update]
+    resource :countries,    only: %i[edit update]
+    resource :allowances,   only: %i[edit update]
+    resource :catalogue,    only: %i[edit update]   # departments + job roles
+    resource :completion,   only: :create
+  end
+
+  mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
-
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-
-  # Defines the root path route ("/")
-  root "home#index"
 end

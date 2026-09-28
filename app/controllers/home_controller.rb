@@ -1,5 +1,5 @@
-# Placeholder landing page until sign-in and the employee list exist (step 2).
-class HomeController < ApplicationController
+# Landing page after sign-in until the employee list exists (step 4).
+class HomeController < AuthenticatedController
   def index
   end
 end

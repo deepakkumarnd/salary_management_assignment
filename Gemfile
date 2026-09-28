@@ -73,3 +73,7 @@ group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
 end
+
+gem "devise", "~> 5.0"
+
+gem "letter_opener_web", "~> 3.0", group: :development

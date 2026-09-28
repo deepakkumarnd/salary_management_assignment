@@ -24,7 +24,9 @@
   </head>
 
   <body class="min-h-screen bg-base-200 text-base-content">
+    <%= render "layouts/navbar" if user_signed_in? %>
     <main class="container mx-auto px-4 py-8">
+      <%= render "components/flash" %>
       <%= yield %>
     </main>
   </body>

@@ -1,0 +1,13 @@
+<%# locals: (messages:, title: "Please fix the following:") %>
+<% if messages.any? %>
+  <div role="alert" class="alert alert-error alert-soft items-start">
+    <div>
+      <p class="font-semibold"><%= title %></p>
+      <ul class="list-disc ms-5">
+        <% messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>

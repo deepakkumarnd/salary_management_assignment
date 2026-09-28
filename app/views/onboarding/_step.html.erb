@@ -1,0 +1,19 @@
+<%# Layout for each wizard step: render layout: "onboarding/step", locals: { step:, title:, intro: } do ... end %>
+<% content_for :title, "#{title} · Setup · Salary Management" %>
+
+<div class="max-w-3xl mx-auto space-y-6">
+  <div>
+    <h1 class="text-sm font-semibold uppercase tracking-wide text-base-content/60">Set up your organization</h1>
+    <div class="mt-3"><%= render "onboarding/progress", current: step %></div>
+  </div>
+
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-5">
+      <div>
+        <h2 class="card-title text-2xl"><%= title %></h2>
+        <p class="text-base-content/70 mt-1"><%= intro %></p>
+      </div>
+      <%= yield %>
+    </div>
+  </div>
+</div>

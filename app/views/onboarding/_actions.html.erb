@@ -1,0 +1,9 @@
+<%# locals: (form:, back: nil) %>
+<div class="card-actions justify-between items-center pt-2">
+  <% if back %>
+    <%= link_to "Back", back, class: "btn btn-ghost" %>
+  <% else %>
+    <span></span>
+  <% end %>
+  <%= form.submit "Save & continue", class: "btn btn-primary" %>
+</div>
