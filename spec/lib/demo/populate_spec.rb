@@ -89,19 +89,19 @@ RSpec.describe Demo::Populate do
       expect(deductions.reject(&:valid?)).to be_empty
     end
 
-    it "logs past exports for every country, so this month's arrears have a real cutoff" do
+    it "logs past exports for every country" do
       exports = organization.payroll_exports
       expect(exports.where(period_start: Date.new(2026, 8, 1)).count).to eq(8)
       expect(exports.where(period_start: Date.new(2026, 9, 1))).to be_empty
       expect(exports.pluck(:exported_by_id).uniq).to eq([ hr.id ])
     end
 
-    it "produces data the payroll and insights run on, with some arrears" do
+    it "produces data the payroll and insights run on" do
       india = Country.find_by!(name: "India")
       run = Payroll::Run.new(organization, india, Payroll::Month.parse("2026-09"))
 
       expect(run.summary.headcount).to be > 50
-      expect(run.summary.with_arrears).to be >= 1
+      expect(run.summary.deductions).to be > 0
       expect(Insights::CountryReport.new(organization, india).summary.headcount).to be > 50
     end
 

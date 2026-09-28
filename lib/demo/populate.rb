@@ -12,8 +12,7 @@ module Demo
   #   promotions, a handful of backdated entries made this month (at least one per country) and some raises
   #   scheduled for next April.
   # - About 12% leavers, 1% serving notice and a few records ended as "recorded in error".
-  # - Deductions for last month and this month, and export log entries for the last six months, so this month's
-  #   arrears have a real cutoff.
+  # - Deductions for last month and this month, and payroll export log entries for the last six months.
   #
   # Rows are written with insert_all in batches (seconds for 10k employees), so this class upholds the models' rules
   # itself; the specs check the result against the models' validations. Deterministic: the same organization setup
@@ -211,8 +210,8 @@ module Demo
       history.sort_by(&:effective_on)
     end
 
-    # A handful of backdated adjustments, entered this month but effective one to four months ago, so this month's
-    # payroll shows arrears: 1 in 200 current employees, and at least one in every country.
+    # A handful of backdated adjustments, entered this month but effective one to four months ago (they show as
+    # "Backdated" in the salary history): 1 in 200 current employees, and at least one in every country.
     def add_backdated_adjustments(people)
       people.select { it.end_date.nil? }.group_by(&:country).each_value do |group|
         group.shuffle(random: @random).first([ group.size / 200, 1 ].max).each do |person|

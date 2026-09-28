@@ -26,7 +26,7 @@ RSpec.describe "Salary revisions", type: :request do
            params: { salary_revision: { effective_on: "2026-04-01", basic_pay: "11,00,000", reason: "appraisal" } }
 
       expect(response).to redirect_to(employee_path(employee, tab: "history"))
-      expect(flash[:notice]).to include("backdated to 1 Apr 2026", "arrears")
+      expect(flash[:notice]).to include("backdated to 1 Apr 2026", "isn't recalculated")
       expect(employee.basic_pay_on(Date.new(2026, 5, 1))).to eq(1_100_000)
     end
 

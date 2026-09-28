@@ -31,7 +31,7 @@ RSpec.describe "Payroll exports", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("September 2026", "₹1,00,000", "₹95,000", "Download CSV",
-                                     "Nothing has been exported for India yet", "past months use today's policy percentages")
+                                     "past months use today's policy percentages")
   end
 
   it "downloads the CSV and logs the export" do

@@ -18,7 +18,7 @@ RSpec.describe "Deductions and payroll export", type: :system do
   def downloaded_csv
     path = nil
     Timeout.timeout(10) { sleep 0.1 until (path = Dir[File.join(DOWNLOAD_DIR, "*.csv")].first) }
-    CSV.parse(File.read(path, encoding: "bom|utf-8"), headers: true).index_by { it["full_name"] }
+    CSV.parse(File.read(path, encoding: "bom|utf-8"), headers: true).index_by { it["employee_name"] }
   end
 
   it "enters a month's deductions row by row, then downloads a file with the right amounts" do
@@ -55,10 +55,9 @@ RSpec.describe "Deductions and payroll export", type: :system do
     click_button "Download CSV"
     rows = downloaded_csv
 
-    expect(rows["Priya Nair"].to_h).to include("gross_pay_monthly" => "140000", "unpaid_leave_days" => "1.5",
-                                               "unpaid_leave_deduction" => "7000", "arrears" => "0", "net_pay_before_tax" => "133000")
-    expect(rows["Rahul Verma"].to_h).to include("gross_pay_monthly" => "70000", "other_deductions" => "5000",
-                                                "other_deductions_detail" => "Salary advance recovery: 5000", "net_pay_before_tax" => "65000")
+    expect(rows["Priya Nair"].to_h).to eq("employee_id" => "ACME-00001", "employee_name" => "Priya Nair",
+                                          "gross_salary" => "140000", "deductions" => "7000", "net_salary" => "133000")
+    expect(rows["Rahul Verma"].to_h).to include("gross_salary" => "70000", "deductions" => "5000", "net_salary" => "65000")
 
     visit payroll_exports_path
     within("section[aria-labelledby=export-log]") do

@@ -27,7 +27,8 @@
         <% end %>
         <% if @effective_on < Date.current.beginning_of_month %>
           <div role="note" class="alert alert-info alert-soft text-sm">
-            <span>Backdated: payroll will pay the difference for the months from <%= @effective_on.strftime("%B %Y") %> as arrears.</span>
+            <span>Backdated: earlier months' payroll isn't recalculated, so the difference for the months from
+              <%= @effective_on.strftime("%B %Y") %> isn't paid. The new basic is paid from this month on.</span>
           </div>
         <% elsif @effective_on > Date.current %>
           <div role="note" class="alert alert-info alert-soft text-sm">

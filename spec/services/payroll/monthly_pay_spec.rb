@@ -62,7 +62,6 @@ RSpec.describe Payroll::MonthlyPay do
 
     expect(result.basic_monthly).to eq(105_000)   # 12,00,000 × 15/360 + 13,20,000 × 15/360 = 50,000 + 55,000
     expect(result.allowance_amounts["HRA"]).to eq(42_000)
-    expect(result.pay_change).to have_attributes(effective_on: Date.new(2026, 9, 16), basic_pay: 1_320_000, previous_basic: 1_200_000)
     expect(result.pay_changes_count).to eq(1)
   end
 
@@ -72,7 +71,7 @@ RSpec.describe Payroll::MonthlyPay do
                              voided_at: Time.current, voided_by: create(:user, organization:), void_reason: "Typo")
 
     expect(pay(person).basic_monthly).to eq(100_000)
-    expect(pay(person).pay_change).to be_nil
+    expect(pay(person).pay_changes_count).to eq(0)
   end
 
   describe "month lengths" do
@@ -140,14 +139,6 @@ RSpec.describe Payroll::MonthlyPay do
       expect(result.net).to eq(-60_000)
       expect(result).to be_negative_net
     end
-  end
-
-  it "adds arrears to the net" do
-    arrears = Payroll::Arrears::Result.new(amount: 2_500, from: Payroll::Month.parse("2026-07"), to: Payroll::Month.parse("2026-08"))
-    result = described_class.new(employee: employee, month: september, revisions: Employee.last.salary_revisions.to_a,
-                                 structure:, country_allowances: organization.country_allowances.to_a, arrears:)
-
-    expect(result.net).to eq(140_000 + 2_500)
   end
 
   it "gives the annual reference figures as of the last employed day" do

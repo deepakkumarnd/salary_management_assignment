@@ -66,8 +66,7 @@ It takes a few seconds and adds:
 - employees hired over the last six years, with a yearly appraisal every 1 April, some promotions, a few backdated
   adjustments entered this month and raises scheduled for next April;
 - about 12% leavers, 1% serving notice and a few records ended as "recorded in error";
-- deductions for last month and this month, and payroll export log entries for the last six months, so this month's
-  export shows arrears.
+- deductions for last month and this month, and payroll export log entries for the last six months.
 
 The data is the same on every run. Running it again adds more employees, continuing the employee ID sequence.
 

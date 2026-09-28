@@ -41,7 +41,8 @@ class SalaryRevision < ApplicationRecord
   def voided? = voided_at.present?
   def scheduled?(today = Date.current) = effective_on > today
 
-  # Entered after the month it takes effect in began, so payroll owes (or recovers) arrears for earlier months.
+  # Entered after the month it takes effect in began. Payroll isn't recalculated for earlier months: the new basic
+  # is paid from the current month on.
   def backdated? = effective_on < (created_at || Time.current).to_date.beginning_of_month
 
   private

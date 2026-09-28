@@ -30,7 +30,7 @@ class SalaryRevisionsController < AuthenticatedController
     if @revision.scheduled?
       "Salary revision recorded. It takes effect on #{date}."
     elsif @revision.backdated?
-      "Salary revision recorded, backdated to #{date}. Payroll will show arrears for the months before this one."
+      "Salary revision recorded, backdated to #{date}. Earlier months' payroll isn't recalculated: the new basic is paid from this month on."
     else
       "Salary revision recorded, effective #{date}."
     end

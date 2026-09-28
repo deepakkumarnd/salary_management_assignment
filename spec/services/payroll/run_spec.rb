@@ -44,14 +44,6 @@ RSpec.describe Payroll::Run do
     end
   end
 
-  it "lists allowance columns: the country's, then roles', each alphabetical" do
-    create(:country_allowance, organization:, country: india, name: "Conveyance", percent_bp: 500)
-    create(:pay_structure_allowance, pay_structure: accountant_structure, name: "Books", percent_bp: 100)
-    structure
-
-    expect(run.allowance_columns).to eq(%w[Conveyance HRA Books Special])
-  end
-
   describe "summary" do
     it "counts people and adds up the money" do
       hire("Continuing")                                                       # gross 1,50,000
@@ -64,20 +56,11 @@ RSpec.describe Payroll::Run do
 
       summary = run.summary
 
-      expect(summary).to have_attributes(headcount: 4, joiners: 1, leavers: 1, pay_changes: 1, with_arrears: 0)
+      expect(summary).to have_attributes(headcount: 4, joiners: 1, leavers: 1, pay_changes: 1)
       expect(summary.gross).to eq(150_000 + 157_500 + 75_000 + 75_000)
       expect(summary.other_deductions).to eq(5_000)
+      expect(summary.deductions).to eq(5_000)
       expect(summary.net).to eq(summary.gross - 5_000)
-    end
-
-    it "counts rows with arrears and their total" do
-      create(:payroll_export, organization:, country: india, period_start: Date.new(2026, 1, 1), exported_by: user,
-                              created_at: Time.utc(2026, 1, 26))   # payroll live since January
-      person = hire("Backdated")
-      person.salary_revisions.update_all(created_at: Time.utc(2025, 12, 1))   # on file (and on the payroll) all year
-      create(:salary_revision, employee: person, effective_on: Date.new(2026, 8, 1), basic_pay: 1_320_000)   # entered today
-
-      expect(run.summary).to have_attributes(with_arrears: 1, arrears: 15_000)   # August: 10,000 basic + 5,000 allowances
     end
   end
 
@@ -87,17 +70,8 @@ RSpec.describe Payroll::Run do
       create(:payroll_deduction, employee: person, period_start: september.start, amount: 500_000, description: "Advance",
                                  created_by: user)
 
-      expect(run.warnings.map(&:message)).to include("1 row has a negative net pay")
+      expect(run.warnings.map(&:message)).to include("1 row has a negative net salary")
       expect(run.warnings.find { it.message.include?("negative") }.employees).to eq([ person ])
-    end
-
-    it "says when nothing was ever exported (no arrears yet)" do
-      expect(run.warnings.map(&:message)).to include(a_string_including("Nothing has been exported for India yet"))
-    end
-
-    it "says when the previous month was never exported" do
-      create(:payroll_export, organization:, country: india, period_start: Date.new(2026, 6, 1), exported_by: user)
-      expect(run.warnings.map(&:message)).to include(a_string_including("August 2026 was never exported"))
     end
 
     it "says when the data changed since this month was last exported" do

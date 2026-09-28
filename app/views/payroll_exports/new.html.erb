@@ -18,7 +18,10 @@
 
   <div>
     <h1 class="text-2xl font-bold"><%= country.name %> payroll · <%= month.label %></h1>
-    <p class="text-base-content/70">Monthly amounts in <%= currency %>, before tax.</p>
+    <p class="text-base-content/70">
+      Monthly amounts in <%= currency %>, before tax. The file has one row per person: employee ID, name, gross salary,
+      deductions and net salary (gross − deductions).
+    </p>
   </div>
 
   <div class="stats stats-vertical sm:stats-horizontal bg-base-100 shadow-sm w-full" aria-label="People">
@@ -26,18 +29,16 @@
     <div class="stat"><div class="stat-title">Joiners</div><div class="stat-value tabular-nums"><%= summary.joiners %></div></div>
     <div class="stat"><div class="stat-title">Leavers</div><div class="stat-value tabular-nums"><%= summary.leavers %></div></div>
     <div class="stat"><div class="stat-title">Pay changes</div><div class="stat-value tabular-nums"><%= summary.pay_changes %></div></div>
-    <div class="stat"><div class="stat-title">With arrears</div><div class="stat-value tabular-nums"><%= summary.with_arrears %></div></div>
   </div>
 
   <div class="stats stats-vertical sm:stats-horizontal bg-base-100 shadow-sm w-full" aria-label="Money">
-    <div class="stat"><div class="stat-title">Gross</div><div class="stat-value text-2xl tabular-nums"><%= money(summary.gross, currency) %></div></div>
-    <div class="stat"><div class="stat-title">Arrears</div><div class="stat-value text-2xl tabular-nums"><%= money(summary.arrears, currency) %></div></div>
+    <div class="stat"><div class="stat-title">Gross salary</div><div class="stat-value text-2xl tabular-nums"><%= money(summary.gross, currency) %></div></div>
     <div class="stat">
       <div class="stat-title">Deductions</div>
-      <div class="stat-value text-2xl tabular-nums"><%= money(summary.unpaid_leave + summary.other_deductions, currency) %></div>
+      <div class="stat-value text-2xl tabular-nums"><%= money(summary.deductions, currency) %></div>
       <div class="stat-desc">Unpaid leave <%= money(summary.unpaid_leave, currency) %> · other <%= money(summary.other_deductions, currency) %></div>
     </div>
-    <div class="stat"><div class="stat-title">Net pay before tax</div><div class="stat-value text-2xl tabular-nums"><%= money(summary.net, currency) %></div></div>
+    <div class="stat"><div class="stat-title">Net salary</div><div class="stat-value text-2xl tabular-nums"><%= money(summary.net, currency) %></div></div>
   </div>
 
   <% @run.warnings.each do |warning| %>
@@ -61,6 +62,7 @@
 
   <p class="text-sm text-base-content/60">
     Known limitation: past months use today's policy percentages, role and department. Export the current month for payroll.
-    Every download is logged with its checksum; arrears next month are measured from the latest export of this month.
+    Salary revisions count from their effective date within a month; backdated changes aren't paid for earlier months.
+    Every download is logged with its checksum.
   </p>
 </div>
