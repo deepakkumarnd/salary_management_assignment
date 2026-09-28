@@ -1,3 +1,6 @@
+# Find fields by aria-label too (the employee search box and filters are labelled that way).
+Capybara.enable_aria_label = true
+
 RSpec.configure do |config|
   # System specs render the real stylesheet, so compile Tailwind once per run (~0.2s) rather than rely on a
   # possibly stale app/assets/builds/tailwind.css.

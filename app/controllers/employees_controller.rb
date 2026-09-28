@@ -1,15 +1,22 @@
 class EmployeesController < AuthenticatedController
   include EmployeePage
+  include Pagy::Method
+
+  PER_PAGE = 25
 
   before_action :set_employee, only: %i[show edit update]
   before_action :refuse_if_exited, only: %i[edit update]
 
-  # Search, filters and paging come with EmployeeSearch (step 5); for now, everyone by employee ID.
+  # The URL is the state: /employees?q=priya&country_id=3&status=current&sort=full_name&dir=asc&page=2
   def index
     @today = Date.current
-    @employees = Current.organization.employees.includes(:country, :department, :job_role)
-                        .with_basic_pay_as_of(@today).order(:employee_code).to_a
-    @pay = PayBreakdowns.new(Current.organization, @employees)
+    @search = EmployeeSearch.new(Current.organization, params.permit(*EmployeeSearch::PARAMS), today: @today)
+    @pagy, employees = pagy(:offset, @search.results, limit: PER_PAGE, page: [ params[:page].to_i, 1 ].max)
+    @employees = employees.to_a
+    @pay = PayBreakdowns.new(Current.organization, @employees)   # gross for this page's rows only
+    @countries = Current.organization.countries.order(:name)
+    @departments = Current.organization.departments.order(:name)
+    @job_roles = Current.organization.job_roles.order(:name)
   end
 
   def show

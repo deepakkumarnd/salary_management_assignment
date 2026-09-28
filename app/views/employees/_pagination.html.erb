@@ -1,0 +1,27 @@
+<%# locals: (pagy:) %>
+<%# daisyUI join pagination; each link keeps the current search (pagy builds it from the request's params). %>
+<nav class="flex justify-center mt-4" aria-label="Pages">
+  <div class="join">
+    <% if pagy.previous %>
+      <%= link_to "«", pagy.page_url(:previous), class: "join-item btn btn-sm", aria: { label: "Previous page" } %>
+    <% else %>
+      <span class="join-item btn btn-sm btn-disabled" aria-hidden="true">«</span>
+    <% end %>
+
+    <% page_series(pagy).each do |page| %>
+      <% if page == :gap %>
+        <span class="join-item btn btn-sm btn-disabled">…</span>
+      <% elsif page == pagy.page %>
+        <span class="join-item btn btn-sm btn-active" aria-current="page"><%= page %></span>
+      <% else %>
+        <%= link_to page, pagy.page_url(page), class: "join-item btn btn-sm" %>
+      <% end %>
+    <% end %>
+
+    <% if pagy.next %>
+      <%= link_to "»", pagy.page_url(:next), class: "join-item btn btn-sm", aria: { label: "Next page" } %>
+    <% else %>
+      <span class="join-item btn btn-sm btn-disabled" aria-hidden="true">»</span>
+    <% end %>
+  </div>
+</nav>

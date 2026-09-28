@@ -1,59 +1,119 @@
 <% content_for :title, "Employees · Salary Management" %>
+<%# Always fetched fresh: it's salary data, and Back/Forward must show the list for that URL. %>
+<% content_for :head, tag.meta(name: "turbo-cache-control", content: "no-cache") %>
 
-<div class="space-y-6">
+<div class="space-y-4">
   <div class="flex flex-wrap items-end justify-between gap-3">
     <div>
       <h1 class="text-2xl font-bold">Employees</h1>
-      <p class="text-base-content/70"><%= pluralize(@employees.size, "employee") %>. Pay is annual, in local currency, as of today.</p>
+      <p class="text-base-content/70">Pay is annual, in local currency, as of today.</p>
     </div>
     <%= link_to "Add employee", new_employee_path, class: "btn btn-primary" %>
   </div>
 
-  <% if @employees.empty? %>
-    <div class="card bg-base-100 shadow-sm">
-      <div class="card-body items-start">
-        <h2 class="card-title">No employees yet</h2>
-        <p class="text-base-content/70">
-          Each employee needs a pay structure for their country and job role.
-          <%= link_to "Check Pay policy", countries_path, class: "link link-primary" %>, then add your first employee.
-        </p>
-      </div>
-    </div>
-  <% else %>
-    <div class="card bg-base-100 shadow-sm">
-      <div class="overflow-x-auto">
-        <table class="table table-zebra table-pin-rows">
-          <thead>
-            <tr>
-              <th>Employee ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Country</th>
-              <th>Department</th>
-              <th>Job role</th>
-              <th>Status</th>
-              <th class="text-right">Basic</th>
-              <th class="text-right">Gross</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @employees.each do |employee| %>
-              <% currency = employee.country.currency_code %>
-              <tr>
-                <td class="font-mono whitespace-nowrap"><%= link_to employee.employee_code, employee_path(employee), class: "link link-primary" %></td>
-                <td class="whitespace-nowrap"><%= link_to employee.full_name, employee_path(employee), class: "link link-hover" %></td>
-                <td><%= employee.email %></td>
-                <td><%= employee.country.name %></td>
-                <td><%= employee.department.name %></td>
-                <td><%= employee.job_role.name %></td>
-                <td><%= status_badge(employee, @today) %></td>
-                <td class="text-right tabular-nums whitespace-nowrap"><%= money(employee.basic_pay, currency) %></td>
-                <td class="text-right tabular-nums whitespace-nowrap"><%= money(@pay.for(employee)&.gross, currency) %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+  <%# Each search is a Turbo Drive visit that advances the URL, so Back/Forward and bookmarks just work. %>
+  <%= form_with url: employees_path, method: :get, class: "card bg-base-100 shadow-sm",
+                data: { controller: "search-form", action: "submit->search-form#clean", turbo_action: "advance" } do |f| %>
+    <div class="card-body p-4 grid gap-3 md:grid-cols-[2fr_repeat(4,1fr)_auto] items-end">
+      <label class="input w-full">
+        <svg class="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+          <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>
+          </g>
+        </svg>
+        <%# Permanent: keeps focus and cursor while results re-render as the user types. %>
+        <%= f.search_field :q, value: @search.q, placeholder: "Name, email or employee ID", autocomplete: "off",
+                               id: "employee_search_q", aria: { label: "Search by name, email or employee ID" },
+                               data: { turbo_permanent: true, search_form_target: "query",
+                                       action: "input->search-form#search" } %>
+      </label>
+      <%= f.select :country_id, options_from_collection_for_select(@countries, :id, :name, @search.country_id),
+                   { include_blank: "All countries" }, class: "select w-full", aria: { label: "Country" },
+                   data: { action: "change->search-form#submit" } %>
+      <%= f.select :department_id, options_from_collection_for_select(@departments, :id, :name, @search.department_id),
+                   { include_blank: "All departments" }, class: "select w-full", aria: { label: "Department" },
+                   data: { action: "change->search-form#submit" } %>
+      <%= f.select :job_role_id, options_from_collection_for_select(@job_roles, :id, :name, @search.job_role_id),
+                   { include_blank: "All job roles" }, class: "select w-full", aria: { label: "Job role" },
+                   data: { action: "change->search-form#submit" } %>
+      <%= f.select :status, options_for_select(EmployeeSearch::STATUSES.map { |key, status| [ status[:label], key ] }, @search.status),
+                   {}, class: "select w-full", aria: { label: "Status" },
+                   data: { action: "change->search-form#submit", default: EmployeeSearch::DEFAULT_STATUS } %>
+      <%= hidden_field_tag :sort, @search.sort, id: nil unless @search.sort == EmployeeSearch::DEFAULT_SORT %>
+      <%= hidden_field_tag :dir, @search.dir, id: nil if @search.dir == "desc" %>
+      <%= f.submit "Search", name: nil, class: "btn" %>
     </div>
   <% end %>
+
+  <div id="employees">
+    <% filters = @search.active_filters %>
+    <div class="flex flex-wrap items-center gap-2 min-h-8">
+      <span class="text-sm text-base-content/70 me-2" role="status"><%= result_range(@pagy) %></span>
+      <% filters.each do |filter| %>
+        <span class="badge badge-outline gap-1">
+          <%= filter[:label] %>
+          <%= link_to "✕", without_filter_path(@search, filter[:key]), class: "link link-hover",
+                           aria: { label: "Remove filter #{filter[:label]}" } %>
+        </span>
+      <% end %>
+      <% if filters.any? %>
+        <%= link_to "Clear all", employees_path, class: "btn btn-ghost btn-xs" %>
+      <% end %>
+    </div>
+
+    <% if @employees.empty? %>
+      <div class="card bg-base-100 shadow-sm mt-3">
+        <div class="card-body items-start">
+          <% if filters.any? %>
+            <h2 class="card-title"><%= empty_result_message(@search) %></h2>
+            <%= link_to "Clear filters", employees_path, class: "btn btn-sm" %>
+          <% else %>
+            <h2 class="card-title">No employees yet</h2>
+            <p class="text-base-content/70">
+              Each employee needs a pay structure for their country and job role.
+              <%= link_to "Check Pay policy", countries_path, class: "link link-primary" %>, then add your first employee.
+            </p>
+          <% end %>
+        </div>
+      </div>
+    <% else %>
+      <div class="card bg-base-100 shadow-sm mt-3">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-pin-rows">
+            <thead>
+              <tr>
+                <th><%= sort_link(@search, "employee_code", "Employee ID") %></th>
+                <th><%= sort_link(@search, "full_name", "Name") %></th>
+                <th>Email</th>
+                <th><%= sort_link(@search, "country", "Country") %></th>
+                <th><%= sort_link(@search, "department", "Department") %></th>
+                <th><%= sort_link(@search, "job_role", "Job role") %></th>
+                <th>Status</th>
+                <th class="text-right"><%= sort_link(@search, "basic_pay", "Basic") %></th>
+                <th class="text-right">Gross</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @employees.each do |employee| %>
+                <% currency = employee.country.currency_code %>
+                <tr>
+                  <td class="font-mono whitespace-nowrap"><%= link_to employee.employee_code, employee_path(employee), class: "link link-primary" %></td>
+                  <td class="whitespace-nowrap"><%= link_to employee.full_name, employee_path(employee), class: "link link-hover" %></td>
+                  <td><%= employee.email %></td>
+                  <td><%= employee.country.name %></td>
+                  <td><%= employee.department.name %></td>
+                  <td><%= employee.job_role.name %></td>
+                  <td><%= status_badge(employee, @today) %></td>
+                  <td class="text-right tabular-nums whitespace-nowrap"><%= money(employee.basic_pay, currency) %></td>
+                  <td class="text-right tabular-nums whitespace-nowrap"><%= money(@pay.for(employee)&.gross, currency) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% end %>
+
+    <%= render "employees/pagination", pagy: @pagy if @pagy.last > 1 %>
+  </div>
 </div>
