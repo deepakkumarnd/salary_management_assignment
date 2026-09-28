@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* daisyUI v5, vendored as a single file (no npm). Update with:
+   curl -sLo app/assets/tailwind/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs */
+@plugin "./daisyui.mjs" {
+  themes: corporate --default, business --prefersdark;
+}
