@@ -33,10 +33,19 @@ RSpec.describe "Sign in and organization setup", type: :system do
     # Step 3: country allowances
     expect(page).to have_css("h2", text: "Country allowances")
     within("section", text: "India") do
-      first("input[name$='[name]']").fill_in(with: "HRA")
-      first("input[name$='[percent]']").fill_in(with: "40")
+      expect(page).to have_css("tbody tr", count: 1)   # one empty row to start with
+      find_all("input[name$='[name]']").last.fill_in(with: "HRA")
+      find_all("input[name$='[percent]']").last.fill_in(with: "40")
+
+      click_button "Add allowance"
+      click_button "Add allowance"
+      expect(page).to have_css("tbody tr", count: 3)
+      find_all("button[aria-label='Remove this row']").last.click
+      expect(page).to have_css("tbody tr", count: 2)
+
+      find_all("input[name$='[name]']").last.fill_in(with: "LTA")
+      find_all("input[name$='[percent]']").last.fill_in(with: "5").send_keys(:enter)   # Enter saves, not "add"
     end
-    click_button "Save & continue"
 
     # Step 4: departments & job roles (suggestions pre-filled)
     expect(page).to have_css("h2", text: "Departments & job roles")
@@ -53,7 +62,7 @@ RSpec.describe "Sign in and organization setup", type: :system do
     expect(page).to have_text("Setup complete")
     expect(page).to have_css("nav", text: "Acme Corporation")
     expect(organization.reload).to be_setup_completed
-    expect(organization.country_allowances.pluck(:name)).to eq([ "HRA" ])
+    expect(organization.country_allowances.order(:name).pluck(:name, :percent_bp)).to eq([ [ "HRA", 4_000 ], [ "LTA", 500 ] ])
 
     # Resuming later skips the wizard
     visit onboarding_root_path

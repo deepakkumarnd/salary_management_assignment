@@ -138,6 +138,27 @@ RSpec.describe "Onboarding", type: :request do
         expect(CountryAllowance.exists?(lta.id)).to be(false)
       end
 
+      it "starts each country with one empty row, or none once it has allowances" do
+        create(:country_allowance, organization:, country: india, name: "HRA")
+
+        get edit_onboarding_allowances_path
+
+        expect(response.body.scan(/name="organization\[country_allowances_attributes\]\[\d+\]\[name\]"/).size)
+          .to eq(2)   # HRA + Germany's empty row (the <template> row uses NEW_RECORD, not a number)
+      end
+
+      it "adds an empty row without saving when JavaScript is off" do
+        patch onboarding_allowances_path, params: { add_allowance: india.id, organization: { country_allowances_attributes: {
+          "0" => { country_id: india.id, name: "HRA", percent: "40" }
+        } } }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include('value="HRA"')
+        expect(response.body.scan(/name="organization\[country_allowances_attributes\]\[\d+\]\[name\]"/).size)
+          .to eq(3)   # India: HRA + the added row; Germany: one empty row
+        expect(organization.country_allowances.reload).to be_empty
+      end
+
       it "is optional" do
         patch onboarding_allowances_path, params: { organization: { country_allowances_attributes: {} } }
         expect(response).to redirect_to(edit_onboarding_catalogue_path)

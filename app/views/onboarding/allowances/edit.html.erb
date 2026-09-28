@@ -3,6 +3,9 @@
       intro: "Optional. Allowances paid to everyone in a country, whatever their role, as a % of basic pay " \
              "(e.g. HRA 40% in India). Role-specific allowances are set later, on each pay structure." } do %>
   <%= form_with model: @organization, url: onboarding_allowances_path, method: :patch, class: "space-y-6" do |f| %>
+    <%# Pressing Enter submits with the form's first submit button: make that "save", not a country's "Add allowance". %>
+    <%= f.submit "Save & continue", hidden: true, tabindex: -1, aria: { hidden: true }, id: nil %>
+
     <%# Row errors show next to each field; a country that isn't operating has no row, so its error goes here. %>
     <% row_errors = @organization.errors.attribute_names.any? { it.start_with?("country_allowances.") } %>
     <%= render "components/error_summary",
@@ -13,8 +16,9 @@
     <% allowances_by_country = @organization.country_allowances.to_a.group_by(&:country_id) %>
     <% @organization.countries.order(:name).each do |country| %>
       <% rows = (allowances_by_country[country.id] || []).sort_by { [ it.new_record? ? 1 : 0, it.name.to_s.downcase ] } %>
-      <% rows += Array.new(2) { CountryAllowance.new(country:) } %>
-      <section class="space-y-2" aria-labelledby="country-<%= country.id %>">
+      <% rows << CountryAllowance.new(country:) if rows.empty? %>
+      <% rows << CountryAllowance.new(country:) if @add_row_for == country.id %>
+      <section class="space-y-2" aria-labelledby="country-<%= country.id %>" data-controller="nested-rows">
         <h3 id="country-<%= country.id %>" class="font-semibold flex items-center gap-2">
           <%= country.name %> <span class="badge badge-ghost badge-sm font-mono"><%= country.currency_code %></span>
         </h3>
@@ -23,38 +27,24 @@
             <thead>
               <tr><th>Allowance</th><th class="w-40">% of basic</th><th class="w-20 text-center">Remove</th></tr>
             </thead>
-            <tbody>
+            <tbody data-nested-rows-target="rows">
               <% rows.each do |allowance| %>
                 <%= f.fields_for :country_allowances, allowance, include_id: false do |af| %>
-                  <tr>
-                    <td class="align-top">
-                      <%= af.hidden_field :id if allowance.persisted? %>
-                      <%= af.hidden_field :country_id if allowance.new_record? %>
-                      <%= af.text_field :name, class: input_class(allowance, :name, "input", "input-sm"), maxlength: 40,
-                                               placeholder: "e.g. HRA", aria: { label: "Allowance name, #{country.name}" } %>
-                      <%= field_errors(allowance, :name) %>
-                      <%= field_errors(allowance, :country) %>
-                    </td>
-                    <td class="align-top">
-                      <label class="<%= input_class(allowance, :percent, "input", "input-sm") %>">
-                        <%= af.text_field :percent, inputmode: "decimal", placeholder: "40",
-                                                    aria: { label: "Percent of basic, #{country.name}" } %>
-                        <span class="text-base-content/60">%</span>
-                      </label>
-                      <%= field_errors(allowance, :percent) %>
-                    </td>
-                    <td class="align-top text-center">
-                      <%= af.check_box :_destroy, class: "checkbox checkbox-sm", aria: { label: "Remove #{allowance.name}" } if allowance.persisted? %>
-                    </td>
-                  </tr>
+                  <%= render "onboarding/allowances/row", form: af, allowance:, country: %>
                 <% end %>
               <% end %>
             </tbody>
           </table>
         </div>
+        <template data-nested-rows-target="template">
+          <%= f.fields_for :country_allowances, CountryAllowance.new(country:), child_index: "NEW_RECORD" do |af| %>
+            <%= render "onboarding/allowances/row", form: af, allowance: af.object, country: %>
+          <% end %>
+        </template>
+        <button type="submit" name="add_allowance" value="<%= country.id %>" class="btn btn-ghost btn-sm"
+                data-action="nested-rows#add">+ Add allowance</button>
       </section>
     <% end %>
-    <p class="text-sm text-base-content/60">Need more rows? Save, and two more empty rows appear for each country.</p>
 
     <%= render "onboarding/actions", form: f, back: edit_onboarding_countries_path %>
   <% end %>

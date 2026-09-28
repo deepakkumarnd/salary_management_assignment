@@ -10,6 +10,8 @@ module Onboarding
     # allowance id raises RecordNotFound (404).
     def update
       @organization = Current.organization
+      return add_row if params[:add_allowance].present?
+
       if @organization.update(allowance_params)
         redirect_to edit_onboarding_catalogue_path
       else
@@ -18,6 +20,14 @@ module Onboarding
     end
 
     private
+
+    # "+ Add allowance" without JavaScript: show the form again, keeping what was typed, with one more empty row
+    # for that country. Nothing is saved.
+    def add_row
+      @organization.assign_attributes(allowance_params)
+      @add_row_for = params[:add_allowance].to_i
+      render :edit
+    end
 
     def allowance_params
       params.fetch(:organization, {}).permit(country_allowances_attributes: %i[id country_id name percent _destroy])

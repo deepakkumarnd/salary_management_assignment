@@ -1,0 +1,28 @@
+<%# locals: (form:, allowance:, country:) %>
+<tr>
+  <td class="align-top">
+    <%= form.hidden_field :id if allowance.persisted? %>
+    <%= form.hidden_field :country_id if allowance.new_record? %>
+    <%= form.text_field :name, class: input_class(allowance, :name, "input", "input-sm"), maxlength: 40,
+                               placeholder: "e.g. HRA", aria: { label: "Allowance name, #{country.name}" } %>
+    <%= field_errors(allowance, :name) %>
+    <%= field_errors(allowance, :country) %>
+  </td>
+  <td class="align-top">
+    <label class="<%= input_class(allowance, :percent, "input", "input-sm") %>">
+      <%= form.text_field :percent, inputmode: "decimal", placeholder: "40",
+                                    aria: { label: "Percent of basic, #{country.name}" } %>
+      <span class="text-base-content/60">%</span>
+    </label>
+    <%= field_errors(allowance, :percent) %>
+  </td>
+  <td class="align-top text-center">
+    <% if allowance.persisted? %>
+      <%= form.check_box :_destroy, class: "checkbox checkbox-sm", aria: { label: "Remove #{allowance.name_in_database}" } %>
+    <% else %>
+      <%# Blank rows are ignored on save, so without JavaScript this button simply isn't needed. %>
+      <button type="button" class="btn btn-ghost btn-sm btn-square" data-action="nested-rows#remove"
+              aria-label="Remove this row">✕</button>
+    <% end %>
+  </td>
+</tr>
