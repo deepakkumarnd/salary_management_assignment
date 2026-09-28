@@ -3,6 +3,7 @@
     <%= link_to current_user.organization.name, authenticated_root_path, class: "btn btn-ghost text-lg" %>
     <% if current_user.organization.setup_completed? %>
       <ul class="menu menu-horizontal px-1">
+        <li><%= link_to "Employees", employees_path, class: class_names("menu-active" => controller_name.in?(%w[employees salary_revisions salary_revision_voids salary_revision_corrections employment_ends])) %></li>
         <li><%= link_to "Pay policy", countries_path, class: class_names("menu-active" => controller_name.in?(%w[countries country_allowances pay_structures])) %></li>
       </ul>
     <% end %>

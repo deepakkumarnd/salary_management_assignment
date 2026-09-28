@@ -1,0 +1,59 @@
+<% content_for :title, "Employees · Salary Management" %>
+
+<div class="space-y-6">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">Employees</h1>
+      <p class="text-base-content/70"><%= pluralize(@employees.size, "employee") %>. Pay is annual, in local currency, as of today.</p>
+    </div>
+    <%= link_to "Add employee", new_employee_path, class: "btn btn-primary" %>
+  </div>
+
+  <% if @employees.empty? %>
+    <div class="card bg-base-100 shadow-sm">
+      <div class="card-body items-start">
+        <h2 class="card-title">No employees yet</h2>
+        <p class="text-base-content/70">
+          Each employee needs a pay structure for their country and job role.
+          <%= link_to "Check Pay policy", countries_path, class: "link link-primary" %>, then add your first employee.
+        </p>
+      </div>
+    </div>
+  <% else %>
+    <div class="card bg-base-100 shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra table-pin-rows">
+          <thead>
+            <tr>
+              <th>Employee ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Country</th>
+              <th>Department</th>
+              <th>Job role</th>
+              <th>Status</th>
+              <th class="text-right">Basic</th>
+              <th class="text-right">Gross</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @employees.each do |employee| %>
+              <% currency = employee.country.currency_code %>
+              <tr>
+                <td class="font-mono whitespace-nowrap"><%= link_to employee.employee_code, employee_path(employee), class: "link link-primary" %></td>
+                <td class="whitespace-nowrap"><%= link_to employee.full_name, employee_path(employee), class: "link link-hover" %></td>
+                <td><%= employee.email %></td>
+                <td><%= employee.country.name %></td>
+                <td><%= employee.department.name %></td>
+                <td><%= employee.job_role.name %></td>
+                <td><%= status_badge(employee, @today) %></td>
+                <td class="text-right tabular-nums whitespace-nowrap"><%= money(employee.basic_pay, currency) %></td>
+                <td class="text-right tabular-nums whitespace-nowrap"><%= money(@pay.for(employee)&.gross, currency) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</div>

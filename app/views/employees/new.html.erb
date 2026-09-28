@@ -1,0 +1,19 @@
+<% content_for :title, "Add employee · Salary Management" %>
+
+<div class="max-w-4xl mx-auto space-y-4">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><%= link_to "Employees", employees_path %></li>
+      <li>Add employee</li>
+    </ul>
+  </div>
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-4">
+      <h1 class="card-title text-2xl">Add employee</h1>
+      <p class="text-base-content/70">
+        They get the next employee ID automatically. Their starting basic becomes the first entry in their salary history.
+      </p>
+      <%= render "employees/form", employee: @employee %>
+    </div>
+  </div>
+</div>

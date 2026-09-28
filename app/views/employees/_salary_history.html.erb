@@ -1,0 +1,59 @@
+<%# locals: (employee:, revisions:, currency:, exited:) %>
+<% previous = previous_basics(revisions) %>
+<div class="overflow-x-auto">
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>Effective</th>
+        <th class="text-right">Basic (annual)</th>
+        <th>Change</th>
+        <th>Reason</th>
+        <th>Notes</th>
+        <th>Entered</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% revisions.each do |revision| %>
+        <tr class="<%= "opacity-60" if revision.voided? %>">
+          <td class="whitespace-nowrap align-top">
+            <span class="<%= "line-through" if revision.voided? %>"><%= revision.effective_on.to_fs(:human) %></span>
+            <div class="flex flex-wrap gap-1 mt-1">
+              <% if revision.voided? %>
+                <span class="badge badge-ghost badge-sm">Voided</span>
+              <% elsif revision.scheduled? %>
+                <span class="badge badge-info badge-sm">Scheduled</span>
+              <% end %>
+              <% if revision.backdated? %>
+                <span class="badge badge-warning badge-soft badge-sm">Backdated</span>
+              <% end %>
+            </div>
+          </td>
+          <td class="text-right tabular-nums align-top <%= "line-through" if revision.voided? %>"><%= money(revision.basic_pay, currency) %></td>
+          <td class="tabular-nums align-top whitespace-nowrap"><%= pay_change(revision.basic_pay, previous[revision.id], currency) %></td>
+          <td class="align-top"><%= revision_reason_label(revision.reason) %></td>
+          <td class="align-top max-w-xs">
+            <% if revision.notes %><p class="whitespace-pre-line"><%= revision.notes %></p><% end %>
+            <% if revision.voided? %>
+              <p class="text-sm">
+                Voided by <%= revision.voided_by.full_name %> on <%= local_time(revision.voided_at) %>: <%= revision.void_reason %>
+              </p>
+            <% end %>
+          </td>
+          <td class="align-top text-sm whitespace-nowrap">
+            <%= revision.created_by.full_name %><%= " (former)" unless revision.created_by.active? %><br>
+            <span class="text-base-content/60"><%= local_time(revision.created_at) %></span>
+          </td>
+          <td class="align-top text-right whitespace-nowrap">
+            <% unless revision.voided? || exited %>
+              <%= link_to "Correct", new_employee_salary_revision_correction_path(employee, revision), class: "btn btn-ghost btn-xs" %>
+              <% unless revision.hire? %>
+                <%= link_to "Void", new_employee_salary_revision_void_path(employee, revision), class: "btn btn-ghost btn-xs text-error" %>
+              <% end %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -11,6 +11,9 @@ class PayStructure < ApplicationRecord
   belongs_to :job_role
 
   has_many :allowances, class_name: "PayStructureAllowance", inverse_of: :pay_structure, dependent: :destroy
+  # Current and former employees: a structure anyone has ever used can't be deleted.
+  has_many :employees, foreign_key: %i[country_id job_role_id], primary_key: %i[country_id job_role_id],
+                       inverse_of: :pay_structure, dependent: :restrict_with_error
   accepts_nested_attributes_for :allowances, allow_destroy: true, reject_if: :blank_allowance_row?
 
   attr_readonly :country_id, :job_role_id

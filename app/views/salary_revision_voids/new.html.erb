@@ -1,0 +1,44 @@
+<% content_for :title, "Void salary revision · #{@employee.full_name} · Salary Management" %>
+
+<div class="max-w-2xl mx-auto space-y-4">
+  <%= render "employees/breadcrumbs", employee: @employee, current: "Void salary revision" %>
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-4">
+      <h1 class="card-title text-2xl">Void salary revision</h1>
+
+      <% if @revision.voided? %>
+        <div role="alert" class="alert alert-warning">
+          <span>
+            <%= @revision.voided_by.full_name %> already voided this revision on <%= local_time(@revision.voided_at) %>:
+            <%= @revision.void_reason %>
+          </span>
+        </div>
+        <%= render "salary_revisions/summary", revision: @revision, employee: @employee %>
+        <div class="card-actions">
+          <%= link_to "Back to salary history", employee_path(@employee, tab: "history"), class: "btn btn-primary" %>
+        </div>
+      <% else %>
+        <p class="text-base-content/70">
+          The revision stays in the history, struck through, and no longer counts towards pay. To replace it with the right
+          values in one step, <%= link_to "correct it", new_employee_salary_revision_correction_path(@employee, @revision), class: "link link-primary" %> instead.
+        </p>
+        <%= render "salary_revisions/summary", revision: @revision, employee: @employee %>
+
+        <%= form_with model: @revision, scope: :salary_revision, url: employee_salary_revision_void_path(@employee, @revision),
+                      method: :post, class: "space-y-4" do |f| %>
+          <%= render "components/error_summary", messages: @revision.errors[:base] %>
+          <fieldset class="fieldset">
+            <%= f.label :void_reason, "Why is it wrong?", class: "fieldset-legend" %>
+            <%= f.text_field :void_reason, required: true, maxlength: 200, class: input_class(@revision, :void_reason),
+                                           placeholder: "e.g. Entered twice" %>
+            <%= field_errors(@revision, :void_reason, full: false) %>
+          </fieldset>
+          <div class="card-actions justify-between items-center pt-2">
+            <%= link_to "Cancel", employee_path(@employee, tab: "history"), class: "btn btn-ghost" %>
+            <%= f.submit "Void revision", class: "btn btn-error" %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

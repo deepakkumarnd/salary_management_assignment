@@ -1,0 +1,103 @@
+<%# locals: (employee:) %>
+<% new_hire = employee.new_record? %>
+<% defaults = @default_basics.transform_values { grouped_amount(it.default_basic_pay, it.country.currency_code) } %>
+
+<%= form_with model: employee, url: new_hire ? employees_path : employee_path(employee), class: "space-y-5",
+              data: new_hire ? { controller: "basic-pay-prefill pay-preview", basic_pay_prefill_defaults_value: defaults.to_json,
+                                 pay_preview_url_value: preview_pay_structures_path } : {} do |f| %>
+  <%= render "components/conflict_alert", latest: @latest, noun: "employee" if @latest %>
+  <%= render "components/error_summary", messages: employee.errors[:base] %>
+  <%= f.hidden_field :lock_version unless new_hire %>
+
+  <div class="grid md:grid-cols-2 gap-x-6 gap-y-2">
+    <fieldset class="fieldset">
+      <%= f.label :full_name, "Full name", class: "fieldset-legend" %>
+      <%= f.text_field :full_name, class: input_class(employee, :full_name), required: true, maxlength: 100 %>
+      <%= field_errors(employee, :full_name) %>
+      <%= conflict_hint(employee, :full_name) %>
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <%= f.label :email, class: "fieldset-legend" %>
+      <%= f.email_field :email, class: input_class(employee, :email), required: true %>
+      <%= field_errors(employee, :email) %>
+      <%= conflict_hint(employee, :email) %>
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <%= f.label :country_id, "Country", class: "fieldset-legend" %>
+      <% if new_hire %>
+        <%= f.collection_select :country_id, @countries, :id, :name, { prompt: "Choose a country" },
+                                class: input_class(employee, :country, "select"), required: true,
+                                data: { basic_pay_prefill_target: "country", pay_preview_target: "field", pay_preview_param: "country_id",
+                                        action: "change->basic-pay-prefill#update change->pay-preview#refresh" } %>
+        <p class="label text-wrap">Can't be changed later. A move to another country is recorded as a leaver plus a new hire.</p>
+        <%= field_errors(employee, :country) %>
+      <% else %>
+        <p class="py-2"><%= employee.country.name %> (<%= employee.country.currency_code %>)</p>
+        <p class="label text-wrap">Fixed. A move to another country is recorded as a leaver (internal transfer) plus a new hire.</p>
+      <% end %>
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <%= f.label :job_role_id, "Job role", class: "fieldset-legend" %>
+      <%= f.collection_select :job_role_id, @job_roles, :id, :name, { prompt: "Choose a job role" },
+                              class: input_class(employee, :job_role, "select"), required: true,
+                              data: new_hire ? { basic_pay_prefill_target: "role", pay_preview_target: "field", pay_preview_param: "job_role_id",
+                                                 action: "change->basic-pay-prefill#update change->pay-preview#refresh" } : {} %>
+      <%= field_errors(employee, :job_role) %>
+      <%= conflict_hint(employee, :job_role_id) { JobRole.find(it).name } %>
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <%= f.label :department_id, "Department", class: "fieldset-legend" %>
+      <%= f.collection_select :department_id, @departments, :id, :name, { prompt: "Choose a department" },
+                              class: input_class(employee, :department, "select"), required: true %>
+      <%= field_errors(employee, :department) %>
+      <%= conflict_hint(employee, :department_id) { Department.find(it).name } %>
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <%= f.label :employment_type, class: "fieldset-legend" %>
+      <%= f.select :employment_type, EmployeesHelper::EMPLOYMENT_TYPES.invert, {}, class: input_class(employee, :employment_type, "select") %>
+      <%= field_errors(employee, :employment_type) %>
+      <%= conflict_hint(employee, :employment_type) { employment_type_label(it) } %>
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <%= f.label :hire_date, class: "fieldset-legend" %>
+      <%= f.date_field :hire_date, max: Date.current, class: input_class(employee, :hire_date), required: true %>
+      <% unless new_hire %>
+        <p class="label text-wrap">Changing it moves the hire salary revision to the new date.</p>
+      <% end %>
+      <%= field_errors(employee, :hire_date) %>
+      <%= conflict_hint(employee, :hire_date) { it.to_fs(:human) } %>
+    </fieldset>
+
+    <% if new_hire %>
+      <fieldset class="fieldset">
+        <%= f.label :initial_basic_pay, "Starting basic pay", class: "fieldset-legend" %>
+        <%= f.text_field :initial_basic_pay, inputmode: "numeric", required: true, placeholder: "e.g. 12,00,000",
+                                             class: input_class(employee, :initial_basic_pay),
+                                             data: { basic_pay_prefill_target: "basic", pay_preview_target: "field", pay_preview_param: "basic_pay",
+                                                     action: "input->pay-preview#refresh" } %>
+        <p class="label text-wrap">Annual, in the country's currency. Pre-filled from the role's pay structure; adjust it if needed.</p>
+        <%= field_errors(employee, :initial_basic_pay) %>
+      </fieldset>
+    <% end %>
+  </div>
+
+  <% if new_hire %>
+    <section class="rounded-box border border-base-300 p-4" aria-labelledby="pay-preview-heading">
+      <h2 id="pay-preview-heading" class="font-semibold mb-2">Pay breakdown</h2>
+      <turbo-frame id="pay_preview" data-pay-preview-target="frame">
+        <p class="text-sm text-base-content/60">Choose a country, a job role and a starting basic to see the pay breakdown.</p>
+      </turbo-frame>
+    </section>
+  <% end %>
+
+  <div class="card-actions justify-between items-center pt-2">
+    <%= link_to "Cancel", new_hire ? employees_path : employee_path(employee), class: "btn btn-ghost" %>
+    <%= f.submit new_hire ? "Add employee" : "Save changes", class: "btn btn-primary" %>
+  </div>
+<% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_140002) do
   create_table "countries", force: :cascade do |t|
     t.string "name", null: false
     t.string "currency_code", limit: 3, null: false
@@ -41,6 +41,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_120001) do
     t.datetime "updated_at", null: false
     t.index ["organization_id", "name"], name: "index_departments_on_organization_id_and_name", unique: true
     t.index ["organization_id"], name: "index_departments_on_organization_id"
+  end
+
+  create_table "employees", force: :cascade do |t|
+    t.integer "organization_id", null: false
+    t.string "employee_code", null: false
+    t.string "full_name", null: false
+    t.string "email", null: false
+    t.integer "country_id", null: false
+    t.integer "job_role_id", null: false
+    t.integer "department_id", null: false
+    t.string "employment_type", null: false
+    t.date "hire_date", null: false
+    t.date "employment_end_date"
+    t.string "exit_reason"
+    t.text "exit_notes"
+    t.integer "lock_version", default: 0, null: false
+    t.integer "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["country_id", "job_role_id"], name: "index_employees_on_country_id_and_job_role_id"
+    t.index ["department_id"], name: "index_employees_on_department_id"
+    t.index ["job_role_id"], name: "index_employees_on_job_role_id"
+    t.index ["organization_id", "country_id", "department_id"], name: "idx_on_organization_id_country_id_department_id_db84a8b901"
+    t.index ["organization_id", "department_id"], name: "index_employees_on_organization_id_and_department_id"
+    t.index ["organization_id", "email"], name: "index_employees_on_org_and_email_without_exit", unique: true, where: "employment_end_date IS NULL"
+    t.index ["organization_id", "employee_code"], name: "index_employees_on_organization_id_and_employee_code", unique: true
+    t.index ["organization_id", "employment_end_date"], name: "index_employees_on_organization_id_and_employment_end_date"
+    t.index ["organization_id", "full_name"], name: "index_employees_on_organization_id_and_full_name"
+    t.index ["organization_id", "job_role_id"], name: "index_employees_on_organization_id_and_job_role_id"
+    t.index ["updated_by_id"], name: "index_employees_on_updated_by_id"
+    t.check_constraint "(employment_end_date IS NULL) = (exit_reason IS NULL)", name: "employees_exit_fields_together"
+    t.check_constraint "employment_end_date IS NULL OR employment_end_date >= hire_date", name: "employees_end_after_hire"
+    t.check_constraint "employment_type IN ('full_time','part_time','contractor')", name: "employees_employment_type"
+    t.check_constraint "exit_reason IS NULL OR exit_reason IN ('resignation','termination','retirement','end_of_contract','internal_transfer','recorded_in_error','other')", name: "employees_exit_reason"
   end
 
   create_table "job_roles", force: :cascade do |t|
@@ -105,6 +139,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_120001) do
     t.check_constraint "variable_pay_percent_bp BETWEEN 0 AND 20000", name: "pay_structures_variable_range"
   end
 
+  create_table "salary_revisions", force: :cascade do |t|
+    t.integer "organization_id", null: false
+    t.integer "employee_id", null: false
+    t.date "effective_on", null: false
+    t.integer "basic_pay", null: false
+    t.string "reason", null: false
+    t.text "notes"
+    t.integer "created_by_id", null: false
+    t.datetime "voided_at"
+    t.integer "voided_by_id"
+    t.string "void_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_salary_revisions_on_created_by_id"
+    t.index ["employee_id", "created_at"], name: "index_salary_revisions_on_employee_id_and_created_at"
+    t.index ["employee_id", "effective_on"], name: "index_salary_revisions_in_force_per_day", unique: true, where: "voided_at IS NULL"
+    t.index ["employee_id"], name: "one_hire_revision_per_employee", unique: true, where: "reason = 'hire' AND voided_at IS NULL"
+    t.index ["organization_id", "created_at"], name: "index_salary_revisions_on_organization_id_and_created_at"
+    t.index ["voided_by_id"], name: "index_salary_revisions_on_voided_by_id"
+    t.check_constraint "(voided_at IS NULL) = (voided_by_id IS NULL) AND (voided_at IS NULL) = (void_reason IS NULL)", name: "salary_revisions_void_fields_together"
+    t.check_constraint "basic_pay > 0", name: "salary_revisions_basic_positive"
+    t.check_constraint "reason IN ('hire','appraisal','promotion','market_adjustment','correction')", name: "salary_revisions_reason"
+  end
+
   create_table "users", force: :cascade do |t|
     t.integer "organization_id", null: false
     t.string "full_name", null: false
@@ -130,6 +188,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_120001) do
   add_foreign_key "country_allowances", "organizations", on_delete: :cascade
   add_foreign_key "country_allowances", "users", column: "updated_by_id", on_delete: :nullify
   add_foreign_key "departments", "organizations", on_delete: :cascade
+  add_foreign_key "employees", "countries", on_delete: :restrict
+  add_foreign_key "employees", "departments", on_delete: :restrict
+  add_foreign_key "employees", "organizations", on_delete: :cascade
+  add_foreign_key "employees", "pay_structures", column: ["country_id", "job_role_id"], primary_key: ["country_id", "job_role_id"], on_delete: :restrict
+  add_foreign_key "employees", "users", column: "updated_by_id", on_delete: :nullify
   add_foreign_key "job_roles", "organizations", on_delete: :cascade
   add_foreign_key "organization_countries", "countries", on_delete: :restrict
   add_foreign_key "organization_countries", "organizations", on_delete: :cascade
@@ -138,6 +201,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_120001) do
   add_foreign_key "pay_structures", "job_roles", on_delete: :restrict
   add_foreign_key "pay_structures", "organizations", on_delete: :cascade
   add_foreign_key "pay_structures", "users", column: "updated_by_id", on_delete: :nullify
+  add_foreign_key "salary_revisions", "employees", on_delete: :restrict
+  add_foreign_key "salary_revisions", "organizations", on_delete: :cascade
+  add_foreign_key "salary_revisions", "users", column: "created_by_id", on_delete: :restrict
+  add_foreign_key "salary_revisions", "users", column: "voided_by_id", on_delete: :restrict
   add_foreign_key "users", "organizations", on_delete: :restrict
   add_foreign_key "users", "users", column: "deactivated_by_id", on_delete: :restrict
 end

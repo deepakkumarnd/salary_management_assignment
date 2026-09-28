@@ -1,0 +1,56 @@
+<%# locals: (form:, revision:, employee:, reasons:, fixed_date: false) %>
+<%# Effective date, new basic, reason and notes, with the live change + breakdown preview (pay-preview on the form). %>
+<% currency = employee.country.currency_code %>
+<%= hidden_field_tag :preview_employee_id, employee.employee_code, id: nil, form: "",
+                     data: { pay_preview_target: "field", pay_preview_param: "employee_id" } %>
+
+<div class="grid sm:grid-cols-2 gap-x-6 gap-y-2">
+  <fieldset class="fieldset">
+    <%= form.label :effective_on, "Effective date", class: "fieldset-legend" %>
+    <% if fixed_date %>
+      <p class="py-2"><%= revision.effective_on.to_fs(:human) %> (hire date)</p>
+      <%= hidden_field_tag :preview_effective_on, revision.effective_on.iso8601, id: nil, form: "",
+                           data: { pay_preview_target: "field", pay_preview_param: "effective_on" } %>
+    <% else %>
+      <%= form.date_field :effective_on, required: true, min: employee.hire_date, max: employee.employment_end_date,
+                                         class: input_class(revision, :effective_on),
+                                         data: { pay_preview_target: "field", pay_preview_param: "effective_on",
+                                                 action: "change->pay-preview#refresh" } %>
+      <p class="label text-wrap">Applies from the start of this day. It can be in the past (backdated) or the future (scheduled).</p>
+      <%= field_errors(revision, :effective_on, full: false) %>
+    <% end %>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <%= form.label :basic_pay, "New annual basic pay", class: "fieldset-legend" %>
+    <label class="<%= input_class(revision, :basic_pay) %>">
+      <span class="text-base-content/60"><%= currency_unit(currency) %></span>
+      <%= form.text_field :basic_pay, inputmode: "numeric", required: true, value: amount_input_value(revision, :basic_pay, currency),
+                                      data: { pay_preview_target: "field", pay_preview_param: "basic_pay",
+                                              action: "input->pay-preview#refresh" } %>
+    </label>
+    <%= field_errors(revision, :basic_pay, full: false) %>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <%= form.label :reason, class: "fieldset-legend" %>
+    <% if reasons.one? %>
+      <p class="py-2"><%= revision_reason_label(reasons.first) %></p>
+    <% else %>
+      <%= form.select :reason, reasons.map { [ revision_reason_label(it), it ] }, {}, class: input_class(revision, :reason, "select") %>
+      <%= field_errors(revision, :reason, full: false) %>
+    <% end %>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <%= form.label :notes, class: "fieldset-legend" %>
+    <%= form.text_area :notes, rows: 2, class: input_class(revision, :notes, "textarea"), placeholder: "Optional, e.g. FY26 appraisal cycle" %>
+  </fieldset>
+</div>
+
+<section class="rounded-box border border-base-300 p-4" aria-labelledby="pay-preview-heading">
+  <h2 id="pay-preview-heading" class="font-semibold mb-2">New pay</h2>
+  <turbo-frame id="pay_preview" data-pay-preview-target="frame">
+    <p class="text-sm text-base-content/60">The new pay breakdown appears here.</p>
+  </turbo-frame>
+</section>

@@ -1,0 +1,41 @@
+<%# Rendered by PayStructuresController#preview into the forms' pay_preview frame. %>
+<turbo-frame id="pay_preview" target="_top">
+  <% if @structure.nil? %>
+    <% if @country && @job_role %>
+      <div role="alert" class="alert alert-warning alert-soft">
+        <span>
+          There is no pay structure for <%= @job_role.name %> in <%= @country.name %> yet, so nobody can be hired into
+          it. <%= link_to "Create one in Pay policy", country_path(@country), class: "link" %> first.
+        </span>
+      </div>
+    <% else %>
+      <p class="text-sm text-base-content/60">Choose a country and a job role to see the pay breakdown.</p>
+    <% end %>
+  <% elsif @basic_pay.nil? %>
+    <p class="text-sm text-base-content/60">Enter an annual basic pay (a whole number) to see the breakdown.</p>
+  <% else %>
+    <% currency = @structure.country.currency_code %>
+    <% if @employee && @effective_on %>
+      <div class="space-y-2 mb-3">
+        <% if @basic_before %>
+          <p class="text-sm">
+            Basic in force on <%= @effective_on.to_fs(:human) %>: <span class="tabular-nums"><%= money(@basic_before, currency) %></span>
+            <% if (change = pay_change(@basic_pay, @basic_before, currency)) %>
+              · change <span class="font-semibold tabular-nums"><%= change %></span>
+            <% end %>
+          </p>
+        <% end %>
+        <% if @effective_on < Date.current.beginning_of_month %>
+          <div role="note" class="alert alert-info alert-soft text-sm">
+            <span>Backdated: payroll will pay the difference for the months from <%= @effective_on.strftime("%B %Y") %> as arrears.</span>
+          </div>
+        <% elsif @effective_on > Date.current %>
+          <div role="note" class="alert alert-info alert-soft text-sm">
+            <span>Scheduled: it takes effect automatically on <%= @effective_on.to_fs(:human) %>.</span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+    <%= render "pay_structures/breakdown", breakdown: @breakdown, structure: @structure, currency: %>
+  <% end %>
+</turbo-frame>

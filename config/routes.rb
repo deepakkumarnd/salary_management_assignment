@@ -3,7 +3,7 @@ Rails.application.routes.draw do
   devise_for :users, skip: %i[registrations unlocks]
 
   authenticated :user do
-    root "home#index", as: :authenticated_root
+    root "employees#index", as: :authenticated_root
   end
   devise_scope(:user) { root "devise/sessions#new" }
 
@@ -21,7 +21,18 @@ Rails.application.routes.draw do
   resources :countries, only: %i[index show] do
     resources :allowances, controller: "country_allowances", except: %i[index show]
   end
-  resources :pay_structures, only: %i[new create edit update destroy]
+  resources :pay_structures, only: %i[new create edit update destroy] do
+    get :preview, on: :collection                     # pay breakdown for forms (Turbo Frame)
+  end
+
+  # :id is the employee code (ACME-00042). Employees are never deleted.
+  resources :employees, except: :destroy do
+    resources :salary_revisions, only: %i[new create] do
+      resource :void,       only: %i[new create], controller: "salary_revision_voids"
+      resource :correction, only: %i[new create], controller: "salary_revision_corrections"
+    end
+    resource :employment_end, only: %i[new create destroy]   # destroy = undo exit
+  end
 
   mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
 

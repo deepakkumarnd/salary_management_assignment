@@ -1,0 +1,8 @@
+<%# locals: (employee:, current:) %>
+<div class="breadcrumbs text-sm">
+  <ul>
+    <li><%= link_to "Employees", employees_path %></li>
+    <li><%= link_to "#{employee.full_name} (#{employee.employee_code})", employee_path(employee) %></li>
+    <li><%= current %></li>
+  </ul>
+</div>

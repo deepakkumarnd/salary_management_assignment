@@ -1,0 +1,102 @@
+<% content_for :title, "#{@employee.full_name} · Employees · Salary Management" %>
+<% currency = @employee.country.currency_code %>
+<% exited = @employee.exited?(@today) %>
+<% tab = params[:tab].presence_in(%w[pay history employment]) || "pay" %>
+
+<div class="space-y-6">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><%= link_to "Employees", employees_path %></li>
+      <li class="font-mono"><%= @employee.employee_code %></li>
+    </ul>
+  </div>
+
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold flex flex-wrap items-center gap-3">
+        <%= @employee.full_name %>
+        <span class="font-mono text-base font-normal text-base-content/70"><%= @employee.employee_code %></span>
+        <%= status_badge(@employee, @today) %>
+      </h1>
+      <p class="text-base-content/70">
+        <%= @employee.job_role.name %> · <%= @employee.department.name %> · <%= @employee.country.name %> · <%= @employee.email %>
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <% unless exited %>
+        <%= link_to "Record salary revision", new_employee_salary_revision_path(@employee), class: "btn btn-primary btn-sm" %>
+      <% end %>
+      <% if @employee.employment_end_date %>
+        <%= button_to "Undo exit", employee_employment_end_path(@employee), method: :delete,
+                      params: { lock_version: @employee.lock_version }, class: "btn btn-sm",
+                      data: { turbo_confirm: "Undo the recorded exit? #{@employee.full_name} becomes active again." } %>
+      <% else %>
+        <%= link_to "End employment", new_employee_employment_end_path(@employee), class: "btn btn-sm" %>
+      <% end %>
+      <% unless exited %>
+        <%= link_to "Edit", edit_employee_path(@employee), class: "btn btn-sm btn-ghost" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if exited %>
+    <div role="note" class="alert alert-soft">
+      <span>
+        <%= @employee.full_name %> left on <%= @employee.employment_end_date.to_fs(:human) %>. The record is read-only;
+        undo the exit if it was recorded by mistake.
+      </span>
+    </div>
+  <% end %>
+
+  <div class="tabs tabs-lift">
+    <input type="radio" name="employee_tabs" class="tab" aria-label="Pay" <%= "checked" if tab == "pay" %>>
+    <div class="tab-content bg-base-100 border-base-300 p-6">
+      <h2 class="font-semibold mb-2">
+        Annual pay as of <%= @pay_date.to_fs(:human) %><%= " (last working day)" if @pay_date != @today %>
+      </h2>
+      <% if @next_revision %>
+        <% basic_now = @breakdown&.basic %>
+        <div role="note" class="alert alert-info alert-soft mb-4">
+          <span>
+            <%= basic_now && @next_revision.basic_pay < basic_now ? "Changes" : "Rises" %> to
+            <strong class="tabular-nums"><%= money(@next_revision.basic_pay, currency) %></strong> basic on
+            <%= @next_revision.effective_on.to_fs(:human) %> (<%= revision_reason_label(@next_revision.reason).downcase %>).
+          </span>
+        </div>
+      <% end %>
+      <% if @breakdown %>
+        <div class="max-w-2xl">
+          <%= render "pay_structures/breakdown", breakdown: @breakdown, structure: @employee.pay_structure, currency: %>
+        </div>
+      <% else %>
+        <p class="text-base-content/70">No basic pay in force on this date.</p>
+      <% end %>
+    </div>
+
+    <input type="radio" name="employee_tabs" class="tab" aria-label="Salary history" <%= "checked" if tab == "history" %>>
+    <div class="tab-content bg-base-100 border-base-300 p-6">
+      <%= render "employees/salary_history", employee: @employee, revisions: @revisions, currency:, exited: %>
+    </div>
+
+    <input type="radio" name="employee_tabs" class="tab" aria-label="Employment" <%= "checked" if tab == "employment" %>>
+    <div class="tab-content bg-base-100 border-base-300 p-6">
+      <dl class="grid sm:grid-cols-[12rem_1fr] gap-x-6 gap-y-3 max-w-2xl">
+        <dt class="font-semibold">Hire date</dt>
+        <dd><%= @employee.hire_date.to_fs(:human) %></dd>
+        <dt class="font-semibold">Employment type</dt>
+        <dd><%= employment_type_label(@employee.employment_type) %></dd>
+        <dt class="font-semibold">Country</dt>
+        <dd><%= @employee.country.name %> (<%= currency %>)</dd>
+        <dt class="font-semibold">Last working day</dt>
+        <dd><%= @employee.employment_end_date&.to_fs(:human) || "Not set" %></dd>
+        <% if @employee.exit_reason %>
+          <dt class="font-semibold">Reason for leaving</dt>
+          <dd><%= exit_reason_label(@employee.exit_reason) %></dd>
+          <dt class="font-semibold">Notes</dt>
+          <dd class="whitespace-pre-line"><%= @employee.exit_notes || "None" %></dd>
+        <% end %>
+      </dl>
+    </div>
+  </div>
+</div>

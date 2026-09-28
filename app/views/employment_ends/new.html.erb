@@ -1,0 +1,63 @@
+<% content_for :title, "End employment · #{@employee.full_name} · Salary Management" %>
+
+<div class="max-w-2xl mx-auto space-y-4">
+  <%= render "employees/breadcrumbs", employee: @employee, current: "End employment" %>
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-4">
+      <h1 class="card-title text-2xl">End employment</h1>
+      <p class="text-base-content/70">
+        <%= @employee.full_name %> stays <strong>Leaving</strong> up to and including their last working day, and becomes
+        <strong>Exited</strong> (read-only) the day after. A date in the past records someone who has already left.
+      </p>
+
+      <% if @scheduled.any? %>
+        <div role="alert" class="alert alert-warning alert-soft items-start">
+          <div>
+            <p class="font-semibold">Salary revisions after today</p>
+            <p class="text-sm">A last working day before any of these is refused until they are voided.</p>
+            <ul class="list-disc ms-5 text-sm">
+              <% @scheduled.each do |revision| %>
+                <li>
+                  <%= revision.effective_on.to_fs(:human) %>: <%= money(revision.basic_pay, @employee.country.currency_code) %>
+                  (<%= revision_reason_label(revision.reason).downcase %>) ·
+                  <%= link_to "Void", new_employee_salary_revision_void_path(@employee, revision), class: "link" %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      <% end %>
+
+      <%= form_with model: @employee, scope: :employee, url: employee_employment_end_path(@employee), method: :post, class: "space-y-4" do |f| %>
+        <%= render "components/conflict_alert", latest: @latest, noun: "employee" if @latest %>
+        <%= render "components/error_summary", messages: @employee.errors[:base] %>
+        <%= f.hidden_field :lock_version %>
+
+        <fieldset class="fieldset">
+          <%= f.label :employment_end_date, "Last working day", class: "fieldset-legend" %>
+          <%= f.date_field :employment_end_date, required: true, min: @employee.hire_date,
+                                                 class: input_class(@employee, :employment_end_date, "input", "max-w-60") %>
+          <%= field_errors(@employee, :employment_end_date, full: false) %>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <%= f.label :exit_reason, "Reason", class: "fieldset-legend" %>
+          <%= f.select :exit_reason, EmployeesHelper::EXIT_REASONS.invert, { prompt: "Choose a reason" },
+                       class: input_class(@employee, :exit_reason, "select"), required: true %>
+          <p class="label text-wrap">Use <em>Recorded in error</em> for a record created by mistake: it is left out of insights and payroll.</p>
+          <%= field_errors(@employee, :exit_reason, full: false) %>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <%= f.label :exit_notes, "Notes", class: "fieldset-legend" %>
+          <%= f.text_area :exit_notes, rows: 3, class: "textarea w-full", placeholder: "Optional" %>
+        </fieldset>
+
+        <div class="card-actions justify-between items-center pt-2">
+          <%= link_to "Cancel", employee_path(@employee), class: "btn btn-ghost" %>
+          <%= f.submit "Record exit", class: "btn btn-warning" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

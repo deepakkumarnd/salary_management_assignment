@@ -1,0 +1,49 @@
+<% content_for :title, "Correct salary revision · #{@employee.full_name} · Salary Management" %>
+<% original = @correction.original %>
+
+<div class="max-w-4xl mx-auto space-y-4">
+  <%= render "employees/breadcrumbs", employee: @employee, current: "Correct salary revision" %>
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-4">
+      <h1 class="card-title text-2xl">Correct salary revision</h1>
+
+      <% if original.voided? %>
+        <div role="alert" class="alert alert-warning">
+          <span>
+            <%= original.voided_by.full_name %> voided this revision on <%= local_time(original.voided_at) %>
+            (<%= original.void_reason %>), so it can't be corrected. Check the salary history before recording a new one.
+          </span>
+        </div>
+        <div class="card-actions">
+          <%= link_to "Back to salary history", employee_path(@employee, tab: "history"), class: "btn btn-primary" %>
+        </div>
+      <% else %>
+        <p class="text-base-content/70">
+          The wrong revision is voided (it stays in the history, struck through) and the corrected one is recorded in its
+          place, in one step. <%= "The hire revision keeps the hire date; change the hire date by editing the employee." if original.hire? %>
+        </p>
+        <%= render "salary_revisions/summary", revision: original, employee: @employee %>
+
+        <%= form_with model: @correction.replacement, scope: :correction,
+                      url: employee_salary_revision_correction_path(@employee, original), method: :post, class: "space-y-5",
+                      data: { controller: "pay-preview", pay_preview_url_value: preview_pay_structures_path } do |f| %>
+          <%= render "components/error_summary", messages: @correction.errors[:base] + @correction.replacement.errors[:base] %>
+          <%= render "salary_revisions/fields", form: f, revision: @correction.replacement, employee: @employee,
+                                                 fixed_date: original.hire?,
+                                                 reasons: original.hire? ? [ "hire" ] : SalaryRevision::REASONS - [ "hire" ] %>
+          <fieldset class="fieldset">
+            <%= label_tag "correction_void_reason", "Why is the original wrong?", class: "fieldset-legend" %>
+            <%= text_field_tag "correction[void_reason]", @correction.void_reason, id: "correction_void_reason", required: true,
+                               maxlength: 200, placeholder: "e.g. Typed 15,00,000 instead of 12,00,000",
+                               class: input_class(@correction, :void_reason) %>
+            <%= field_errors(@correction, :void_reason, full: false) %>
+          </fieldset>
+          <div class="card-actions justify-between items-center pt-2">
+            <%= link_to "Cancel", employee_path(@employee, tab: "history"), class: "btn btn-ghost" %>
+            <%= f.submit "Save correction", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+<%# locals: (breakdown:, structure:, currency:) %>
+<%# Annual pay: basic, each allowance labelled Country or Role, gross, target variable pay and total target pay. %>
+<table class="table table-sm">
+  <tbody>
+    <tr>
+      <td>Basic pay</td>
+      <td></td>
+      <td class="text-right tabular-nums"><%= money(breakdown.basic, currency) %></td>
+    </tr>
+    <% breakdown.allowances.each do |allowance| %>
+      <tr>
+        <td class="whitespace-nowrap">
+          <%= allowance[:name] %>
+          <span class="badge badge-sm <%= allowance[:source] == :country ? "badge-info badge-soft" : "badge-accent badge-soft" %>">
+            <%= allowance[:source] == :country ? "Country" : "Role" %>
+          </span>
+        </td>
+        <td class="text-right text-base-content/60 tabular-nums"><%= percent(allowance[:percent_bp], trim: true) %> of basic</td>
+        <td class="text-right tabular-nums"><%= money(allowance[:amount], currency) %></td>
+      </tr>
+    <% end %>
+    <tr class="font-semibold border-t-2 border-base-300">
+      <td>Gross pay</td>
+      <td></td>
+      <td class="text-right tabular-nums"><%= money(breakdown.gross, currency) %></td>
+    </tr>
+    <tr>
+      <td>Target variable pay</td>
+      <td class="text-right text-base-content/60 tabular-nums"><%= percent(structure.variable_pay_percent_bp, trim: true) %> of gross</td>
+      <td class="text-right tabular-nums"><%= money(breakdown.variable_target, currency) %></td>
+    </tr>
+    <tr class="font-bold">
+      <td>Total target pay</td>
+      <td></td>
+      <td class="text-right tabular-nums"><%= money(breakdown.total_target, currency) %></td>
+    </tr>
+    <tr class="text-base-content/70">
+      <td>Overtime rate</td>
+      <td class="text-right tabular-nums"><%= percent(structure.overtime_percent_bp, trim: true) %> of hourly basic</td>
+      <td class="text-right tabular-nums"><%= currency_unit(currency) %><%= format("%.2f", breakdown.overtime_hourly) %> / hour</td>
+    </tr>
+  </tbody>
+</table>
+<p class="text-xs text-base-content/60 px-2">Annual amounts in <%= currency %>. Variable pay is a target at 100% performance.</p>

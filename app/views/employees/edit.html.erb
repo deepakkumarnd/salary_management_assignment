@@ -1,0 +1,21 @@
+<% content_for :title, "Edit #{@employee.full_name} · Salary Management" %>
+
+<div class="max-w-4xl mx-auto space-y-4">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><%= link_to "Employees", employees_path %></li>
+      <li><%= link_to @employee.employee_code, employee_path(@employee), class: "font-mono" %></li>
+      <li>Edit</li>
+    </ul>
+  </div>
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-4">
+      <h1 class="card-title text-2xl">Edit <%= @employee.full_name_in_database %></h1>
+      <p class="text-base-content/70">
+        Pay isn't edited here: <%= link_to "record a salary revision", new_employee_salary_revision_path(@employee), class: "link link-primary" %>
+        so the change keeps its effective date and history.
+      </p>
+      <%= render "employees/form", employee: @employee %>
+    </div>
+  </div>
+</div>

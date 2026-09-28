@@ -1,5 +1,6 @@
 class Department < ApplicationRecord
   belongs_to :organization
+  has_many :employees, dependent: :restrict_with_error
 
   normalizes :name, with: ->(name) { name.strip }
 
