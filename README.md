@@ -51,6 +51,26 @@ Re-running the seed is safe: nothing is duplicated, and an existing user keeps t
 The first sign-in opens the **setup wizard**: organization details, operating countries, country allowances, then
 departments and job roles. The rest of the app is available once setup is finished.
 
+### Demo data (optional)
+
+To try the app at scale, fill ACME with 10,000 employees and several years of history:
+
+```sh
+bin/rails demo:populate ORG="ACME" EMPLOYEES=10000
+```
+
+It takes a few seconds and adds:
+
+- a pay structure for every country and job role (if setup was still pending, it first applies standard defaults: all
+  8 countries, HRA 40% in India, the suggested departments and roles);
+- employees hired over the last six years, with a yearly appraisal every 1 April, some promotions, a few backdated
+  adjustments entered this month and raises scheduled for next April;
+- about 12% leavers, 1% serving notice and a few records ended as "recorded in error";
+- deductions for last month and this month, and payroll export log entries for the last six months, so this month's
+  export shows arrears.
+
+The data is the same on every run. Running it again adds more employees, continuing the employee ID sequence.
+
 ## Running the app
 
 ```sh
@@ -94,8 +114,12 @@ bin/ci
 
 | Path | Contents |
 |---|---|
+| `app/models/` | ActiveRecord models; `Current` holds the signed-in user and organization |
+| `app/services/` | Logic spanning models: `PayCalculator`, `Insights::`, `Payroll::`, `SalaryRevisions::`, `Employment::`, `Onboarding::` |
+| `app/queries/` | `EmployeeSearch`: search, filters and sorting for the employee list |
 | `app/assets/tailwind/` | `application.css` (Tailwind entry point, daisyUI plugin and themes) and the vendored `daisyui.mjs` |
 | `app/javascript/controllers/` | Stimulus controllers |
+| `lib/demo/`, `lib/tasks/demo.rake` | The `demo:populate` task |
 | `spec/` | RSpec specs. Shared config lives in `spec/support/` and factories in `spec/factories/`. |
 | `config/ci.rb` | Steps run by `bin/ci` |
 
