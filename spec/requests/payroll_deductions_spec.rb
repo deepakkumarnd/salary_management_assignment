@@ -24,6 +24,32 @@ RSpec.describe "Payroll deductions", type: :request do
       expect(response.body).not_to include("Left In August")
     end
 
+    it "pages through the roster, 50 at a time, keeping the country, search and month, with totals for everyone" do
+      stub_const("PayrollDeductionsController::PER_PAGE", 2)
+      others = Array.new(3) { |i| create(:employee, pay_structure: structure, full_name: "Person #{i + 1}", hire_date: Date.new(2024, 4, 1)) }
+      create(:payroll_deduction, employee: others.last, period_start: Date.new(2026, 9, 1), amount: 5_000, created_by: user)
+
+      get month_deductions_path("2026-09", country_id: india.id)
+
+      expect(response.body).to include("1–2 of 4", employee.full_name, "Person 1", "₹5,000</strong> other deductions")   # totals: whole roster
+      expect(response.body).not_to include("Person 3")
+      expect(response.body).to include("/deductions/2026-09?country_id=#{india.id}&amp;page=2")
+
+      get month_deductions_path("2026-09", country_id: india.id, page: 2)
+
+      expect(response.body).to include("3–4 of 4", "Person 3")
+      expect(response.body).not_to include("Person 1<")
+    end
+
+    it "keeps the search when paging" do
+      stub_const("PayrollDeductionsController::PER_PAGE", 1)
+      create(:employee, pay_structure: structure, full_name: "Priya Two", hire_date: Date.new(2024, 4, 1))
+
+      get month_deductions_path("2026-09", country_id: india.id, q: "priya")
+
+      expect(response.body).to include("1–1 of 2", "q=priya")
+    end
+
     it "searches the roster by name or employee ID" do
       create(:employee, pay_structure: structure, full_name: "Anna Schmidt", hire_date: Date.new(2024, 4, 1))
 

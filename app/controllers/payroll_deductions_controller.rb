@@ -2,6 +2,10 @@
 # deductions per row; the same row appears on the employee page's Deductions tab. Changes answer with a Turbo Stream
 # that replaces the row (and the month's totals), so a month's leave can be entered in one sitting.
 class PayrollDeductionsController < AuthenticatedController
+  include Pagy::Method
+
+  PER_PAGE = 50   # a data-entry page: long enough to enter a month's leave with few page turns
+
   before_action :set_deduction, only: %i[update destroy]
 
   def index
@@ -15,8 +19,9 @@ class PayrollDeductionsController < AuthenticatedController
     @countries = Current.organization.countries.order(:name)
     @country = params[:country_id].present? ? @countries.find(params[:country_id]) : @countries.first
     @q = params[:q].to_s.strip.presence
-    @employees = roster
-    @deductions = PayrollDeduction.where(employee: @employees, period_start: @month.start).order(:id).to_a.group_by(&:employee_id)
+    @pagy, @employees = pagy(:offset, roster, limit: PER_PAGE, page: [ params[:page].to_i, 1 ].max)
+    @deductions = PayrollDeduction.where(employee_id: @employees.map(&:id), period_start: @month.start).order(:id).to_a
+                                  .group_by(&:employee_id)
   end
 
   def create
@@ -60,7 +65,7 @@ class PayrollDeductionsController < AuthenticatedController
   def default_country = Current.organization.countries.order(:name).first
 
   def roster
-    scope = Payroll::Roster.employees(Current.organization, @country, @month).order(:employee_code)
+    scope = Payroll::Roster.employees(Current.organization, @country, @month).includes(:country).order(:employee_code)
     return scope unless @q
 
     term = "%#{Employee.sanitize_sql_like(@q)}%"

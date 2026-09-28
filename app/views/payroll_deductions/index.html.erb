@@ -35,16 +35,21 @@
     </div>
   <% end %>
 
+  <p class="text-sm text-base-content/70" role="status"><%= result_range(@pagy) %></p>
+
   <div class="card bg-base-100 shadow-sm">
     <% if @employees.empty? %>
       <div class="card-body"><p class="text-base-content/70">Nobody <%= @q ? "matching “#{@q}” " : "" %>is on this payroll in <%= @month.label %>.</p></div>
     <% else %>
       <%= render "payroll_deductions/table", label: :employee,
-                 rows: @employees.includes(:country).map { [ it, @month, @deductions.fetch(it.id, []) ] } %>
+                 rows: @employees.map { [ it, @month, @deductions.fetch(it.id, []) ] } %>
     <% end %>
+    <%# Totals are for the whole roster, not just this page. %>
     <% if @country %>
       <%= render "payroll_deductions/totals", country_id: @country.id, month: @month,
                  deductions: PayrollDeduction.where(employee: Payroll::Roster.employees(Current.organization, @country, @month), period_start: @month.start) %>
     <% end %>
   </div>
+
+  <%= render "components/pagination", pagy: @pagy if @pagy.last > 1 %>
 </div>
