@@ -1,6 +1,11 @@
 <nav class="navbar bg-base-100 shadow-sm px-4">
-  <div class="flex-1">
+  <div class="flex-1 flex items-center gap-2">
     <%= link_to current_user.organization.name, authenticated_root_path, class: "btn btn-ghost text-lg" %>
+    <% if current_user.organization.setup_completed? %>
+      <ul class="menu menu-horizontal px-1">
+        <li><%= link_to "Pay policy", countries_path, class: class_names("menu-active" => controller_name.in?(%w[countries country_allowances pay_structures])) %></li>
+      </ul>
+    <% end %>
   </div>
   <div class="flex-none">
     <details class="dropdown dropdown-end">

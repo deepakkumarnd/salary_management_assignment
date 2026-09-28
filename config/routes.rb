@@ -17,6 +17,12 @@ Rails.application.routes.draw do
     resource :completion,   only: :create
   end
 
+  # Pay policy: the organization's operating countries, each with its allowances and role pay structures
+  resources :countries, only: %i[index show] do
+    resources :allowances, controller: "country_allowances", except: %i[index show]
+  end
+  resources :pay_structures, only: %i[new create edit update destroy]
+
   mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

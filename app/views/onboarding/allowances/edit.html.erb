@@ -30,7 +30,7 @@
             <tbody data-nested-rows-target="rows">
               <% rows.each do |allowance| %>
                 <%= f.fields_for :country_allowances, allowance, include_id: false do |af| %>
-                  <%= render "onboarding/allowances/row", form: af, allowance:, country: %>
+                  <%= render "components/allowance_row", form: af, allowance:, label: country.name, new_record_fields: [ :country_id ] %>
                 <% end %>
               <% end %>
             </tbody>
@@ -38,7 +38,7 @@
         </div>
         <template data-nested-rows-target="template">
           <%= f.fields_for :country_allowances, CountryAllowance.new(country:), child_index: "NEW_RECORD" do |af| %>
-            <%= render "onboarding/allowances/row", form: af, allowance: af.object, country: %>
+            <%= render "components/allowance_row", form: af, allowance: af.object, label: country.name, new_record_fields: [ :country_id ] %>
           <% end %>
         </template>
         <button type="submit" name="add_allowance" value="<%= country.id %>" class="btn btn-ghost btn-sm"

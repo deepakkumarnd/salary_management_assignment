@@ -1,0 +1,18 @@
+<% content_for :title, "Edit pay structure · #{@country.name} · Salary Management" %>
+
+<div class="max-w-4xl mx-auto space-y-4">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><%= link_to "Pay policy", countries_path %></li>
+      <li><%= link_to @country.name, country_path(@country) %></li>
+      <li>Edit pay structure</li>
+    </ul>
+  </div>
+
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-4">
+      <h1 class="card-title text-2xl">Edit pay structure <span class="badge badge-ghost font-mono"><%= @country.currency_code %></span></h1>
+      <%= render "pay_structures/form", structure: @structure, url: pay_structure_path(@structure), method: :patch %>
+    </div>
+  </div>
+</div>

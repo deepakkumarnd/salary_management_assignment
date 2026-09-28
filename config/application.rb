@@ -33,7 +33,9 @@ module SalaryManagement
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # Times are stored and computed in UTC ("today", pay months). Views show them in the viewer's own time zone
+    # through TimeHelper#local_time and the local-time Stimulus controller.
+    config.time_zone = "UTC"
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Generate RSpec specs and FactoryBot factories; skip specs we don't write.

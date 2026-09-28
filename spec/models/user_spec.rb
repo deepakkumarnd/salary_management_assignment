@@ -18,9 +18,11 @@ RSpec.describe User, type: :model do
       expect(user.errors[:email]).to include("is invalid")
     end
 
-    it "requires a password of at least 12 characters" do
-      expect(build(:user, password: "a" * 11)).not_to be_valid
-      expect(build(:user, password: "a" * 12)).to be_valid
+    it "requires a password of 6 to 32 characters" do
+      expect(build(:user, password: "a" * 5)).not_to be_valid
+      expect(build(:user, password: "a" * 6)).to be_valid
+      expect(build(:user, password: "a" * 32)).to be_valid
+      expect(build(:user, password: "a" * 33)).not_to be_valid
     end
 
     it "requires the confirmation to match when given" do

@@ -1,0 +1,28 @@
+<%# locals: (allowance:, url:, method:) %>
+<%= form_with model: allowance, scope: :country_allowance, url:, method:, class: "space-y-4" do |f| %>
+  <%= render "components/conflict_alert", latest: @latest, noun: "allowance" if @latest %>
+  <%= f.hidden_field :lock_version if allowance.persisted? %>
+
+  <fieldset class="fieldset">
+    <%= f.label :name, class: "fieldset-legend" %>
+    <%= f.text_field :name, class: input_class(allowance, :name), maxlength: 40, placeholder: "e.g. HRA", required: true %>
+    <%= field_errors(allowance, :name) %>
+    <%= conflict_hint(allowance, :name) %>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <%= f.label :percent, "Percent of basic", class: "fieldset-legend" %>
+    <label class="<%= input_class(allowance, :percent, "input", "max-w-40") %>">
+      <%= f.text_field :percent, inputmode: "decimal", placeholder: "40", required: true %>
+      <span class="text-base-content/60">%</span>
+    </label>
+    <p class="label">Up to 200%, with at most 2 decimals</p>
+    <%= field_errors(allowance, :percent) %>
+    <%= conflict_hint(allowance, :percent, compare: :percent_bp) %>
+  </fieldset>
+
+  <div class="card-actions justify-between items-center pt-2">
+    <%= link_to "Cancel", country_path(@country), class: "btn btn-ghost" %>
+    <%= f.submit "Save allowance", class: "btn btn-primary" %>
+  </div>
+<% end %>

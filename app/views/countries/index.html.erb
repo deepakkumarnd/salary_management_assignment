@@ -1,0 +1,37 @@
+<% content_for :title, "Pay policy · Salary Management" %>
+
+<div class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold">Pay policy</h1>
+    <p class="text-base-content/70">
+      How people are paid in each country you operate in: allowances for everyone in the country, and a pay structure
+      for each job role.
+    </p>
+  </div>
+
+  <div class="card bg-base-100 shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead>
+          <tr><th>Country</th><th>Currency</th><th>Country allowances</th><th>Pay structures</th></tr>
+        </thead>
+        <tbody>
+          <% @countries.each do |country| %>
+            <% structures = @structure_counts.fetch(country.id, 0) %>
+            <tr class="hover:bg-base-200">
+              <td><%= link_to country.name, country_path(country), class: "link link-primary font-semibold" %></td>
+              <td class="font-mono"><%= country.currency_code %></td>
+              <td><%= @allowance_counts.fetch(country.id, 0) %></td>
+              <td>
+                <%= structures %> of <%= pluralize(@role_count, "role") %>
+                <% if structures < @role_count %>
+                  <span class="badge badge-warning badge-sm ms-1"><%= @role_count - structures %> missing</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

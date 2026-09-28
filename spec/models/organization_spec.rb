@@ -109,7 +109,7 @@ RSpec.describe Organization, type: :model do
       organization.countries << germany
 
       expect(organization.update_operating_countries([ germany.id ])).to be(false)
-      expect(organization.errors[:base]).to include("India can't be removed while it has country allowances")
+      expect(organization.errors[:base]).to include("India can't be removed while it has allowances or pay structures")
       expect(organization.reload.countries).to contain_exactly(india, germany)
     end
   end

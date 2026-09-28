@@ -7,6 +7,7 @@ class Organization < ApplicationRecord
   has_many :departments
   has_many :job_roles
   has_many :country_allowances
+  has_many :pay_structures
 
   accepts_nested_attributes_for :country_allowances, allow_destroy: true, reject_if: :blank_allowance_row?
 
@@ -42,7 +43,7 @@ class Organization < ApplicationRecord
     transaction do
       organization_countries.includes(:country).where.not(country_id: chosen_ids).each do |operating|
         next if operating.destroy
-        errors.add(:base, "#{operating.country.name} can't be removed while it has country allowances")
+        errors.add(:base, "#{operating.country.name} can't be removed while it has allowances or pay structures")
       end
       raise ActiveRecord::Rollback if errors.any?
 

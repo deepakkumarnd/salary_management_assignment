@@ -65,6 +65,17 @@ RSpec.describe CountryAllowance, type: :model do
     end
   end
 
+  it "can't reuse the name of a role allowance in the same country" do
+    role_allowance = create(:pay_structure_allowance, name: "Special")
+    structure = role_allowance.pay_structure
+
+    allowance = build(:country_allowance, organization: structure.organization, country: structure.country, name: "special")
+
+    expect(allowance).not_to be_valid
+    expect(allowance.errors[:name])
+      .to include("Special is already a role allowance for #{structure.job_role.name} in #{structure.country.name}")
+  end
+
   it "must be for one of the organization's operating countries" do
     allowance = described_class.new(organization: create(:organization), country: create(:country),
                                     name: "HRA", percent: "40")

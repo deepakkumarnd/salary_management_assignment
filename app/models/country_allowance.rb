@@ -1,5 +1,6 @@
 # An allowance paid to every employee of the organization in a country, as a % of basic (e.g. HRA 40% in India).
 class CountryAllowance < ApplicationRecord
+  include OperatingCountry
   include PercentAttribute
   include TracksUpdatedBy
 
@@ -12,12 +13,12 @@ class CountryAllowance < ApplicationRecord
 
   validates :name, presence: true, length: { maximum: 40 },
                    uniqueness: { scope: %i[organization_id country_id], case_sensitive: false }
-  validate :country_is_operating_country
+  validate :name_not_used_by_a_role_allowance
 
   private
 
-  def country_is_operating_country
-    return if organization.nil? || country.nil? || organization.countries.include?(country)
-    errors.add(:country, "is not one of the organization's operating countries")
+  def name_not_used_by_a_role_allowance
+    conflict = AllowanceNameGuard.conflict_for_country_allowance(self)
+    errors.add(:name, conflict) if conflict
   end
 end

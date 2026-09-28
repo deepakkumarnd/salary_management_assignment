@@ -1,17 +1,23 @@
-<%# locals: (form:, allowance:, country:) %>
+<%# locals: (form:, allowance:, label: nil, new_record_fields: []) %>
+<%# One row of an allowances table (nested attributes). new_record_fields are hidden fields a new row needs
+    (e.g. country_id); label names the context for screen readers. %>
+<% context = label ? ", #{label}" : "" %>
 <tr>
   <td class="align-top">
     <%= form.hidden_field :id if allowance.persisted? %>
-    <%= form.hidden_field :country_id if allowance.new_record? %>
+    <% if allowance.new_record? %>
+      <% new_record_fields.each do |field| %>
+        <%= form.hidden_field field %>
+      <% end %>
+    <% end %>
     <%= form.text_field :name, class: input_class(allowance, :name, "input", "input-sm"), maxlength: 40,
-                               placeholder: "e.g. HRA", aria: { label: "Allowance name, #{country.name}" } %>
+                               placeholder: "e.g. HRA", aria: { label: "Allowance name#{context}" } %>
     <%= field_errors(allowance, :name) %>
     <%= field_errors(allowance, :country) %>
   </td>
   <td class="align-top">
     <label class="<%= input_class(allowance, :percent, "input", "input-sm") %>">
-      <%= form.text_field :percent, inputmode: "decimal", placeholder: "40",
-                                    aria: { label: "Percent of basic, #{country.name}" } %>
+      <%= form.text_field :percent, inputmode: "decimal", placeholder: "40", aria: { label: "Percent of basic#{context}" } %>
       <span class="text-base-content/60">%</span>
     </label>
     <%= field_errors(allowance, :percent) %>

@@ -1,0 +1,114 @@
+<%# locals: (structure:, url:, method:) %>
+<% currency = @country.currency_code %>
+<% country_allowances = Current.organization.country_allowances.where(country: @country).order(:name) %>
+
+<%= form_with model: structure, scope: :pay_structure, url:, method:, class: "space-y-5" do |f| %>
+  <%# Pressing Enter submits with the form's first submit button: make that "save", not "Add allowance". %>
+  <%= f.submit "Save pay structure", hidden: true, tabindex: -1, aria: { hidden: true }, id: nil %>
+
+  <%= render "components/conflict_alert", latest: @latest, noun: "pay structure" if @latest %>
+  <%= render "components/error_summary", messages: structure.errors[:base] %>
+  <%= f.hidden_field :lock_version if structure.persisted? %>
+  <%= f.hidden_field :country_id if structure.new_record? %>
+
+  <fieldset class="fieldset">
+    <%= f.label :job_role_id, "Job role", class: "fieldset-legend" %>
+    <% if structure.new_record? %>
+      <% roles = Current.organization.job_roles.where.not(id: PayStructure.where(country: @country).select(:job_role_id)).order(:name) %>
+      <%= f.collection_select :job_role_id, roles, :id, :name, { prompt: "Choose a job role" },
+                              class: input_class(structure, :job_role, "select"), required: true %>
+      <%= field_errors(structure, :job_role) %>
+    <% else %>
+      <p class="font-semibold"><%= structure.job_role.name %></p>
+    <% end %>
+  </fieldset>
+
+  <div class="grid sm:grid-cols-3 gap-4">
+    <fieldset class="fieldset">
+      <%= f.label :default_basic_pay, class: "fieldset-legend" %>
+      <label class="<%= input_class(structure, :default_basic_pay) %>">
+        <span class="text-base-content/60"><%= currency_unit(currency) %></span>
+        <%= f.text_field :default_basic_pay, inputmode: "numeric", required: true, placeholder: "e.g. 12,00,000",
+                                             value: amount_input_value(structure, :default_basic_pay, currency) %>
+      </label>
+      <p class="label text-wrap">Annual, in <%= currency %>. Pre-fills new hires' starting basic.</p>
+      <%= field_errors(structure, :default_basic_pay) %>
+      <%= conflict_hint(structure, :default_basic_pay) { money(it, currency) } %>
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <%= f.label :variable_pay_percent, "Target variable pay", class: "fieldset-legend" %>
+      <label class="<%= input_class(structure, :variable_pay_percent) %>">
+        <%= f.text_field :variable_pay_percent, inputmode: "decimal", placeholder: "10" %>
+        <span class="text-base-content/60">% of gross</span>
+      </label>
+      <p class="label text-wrap">At 100% performance. 0 for none; up to 200.</p>
+      <%= field_errors(structure, :variable_pay_percent) %>
+      <%= conflict_hint(structure, :variable_pay_percent, compare: :variable_pay_percent_bp) %>
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <%= f.label :overtime_percent, "Overtime rate", class: "fieldset-legend" %>
+      <label class="<%= input_class(structure, :overtime_percent) %>">
+        <%= f.text_field :overtime_percent, inputmode: "decimal", placeholder: "150", required: true %>
+        <span class="text-base-content/60">% of hourly</span>
+      </label>
+      <p class="label text-wrap">Of hourly basic pay, at <%= Current.organization.standard_hours_per_week %> hours a week. Up to 400.</p>
+      <%= field_errors(structure, :overtime_percent) %>
+      <%= conflict_hint(structure, :overtime_percent, compare: :overtime_percent_bp) %>
+    </fieldset>
+  </div>
+
+  <div role="note" class="rounded-box bg-base-200 p-4 text-sm">
+    <p class="font-semibold">Country allowances in <%= @country.name %> (apply to every role)</p>
+    <% if country_allowances.any? %>
+      <p><%= country_allowances.map { "#{it.name} #{percent(it.percent_bp)}" }.to_sentence %></p>
+    <% else %>
+      <p class="text-base-content/70">None</p>
+    <% end %>
+  </div>
+
+  <section id="role-allowances" class="space-y-2" aria-labelledby="role-allowances-heading" data-controller="nested-rows">
+    <h2 id="role-allowances-heading" class="font-semibold">Role allowances</h2>
+    <p class="text-sm text-base-content/70">
+      Optional. Paid on top of the country allowances to everyone in this role, as a % of basic pay.
+      A role allowance can't reuse the name of a country allowance.
+    </p>
+    <% if @latest %>
+      <p class="text-sm font-medium flex items-center gap-2">
+        <span class="status status-warning" aria-hidden="true"></span> Saved role allowances:
+        <%= @latest.allowances.map { "#{it.name} #{percent(it.percent_bp, trim: true)}" }.to_sentence.presence || "none" %>
+      </p>
+    <% end %>
+
+    <% rows = structure.allowances.to_a.sort_by { [ it.new_record? ? 1 : 0, it.name.to_s.downcase ] } %>
+    <% rows << structure.allowances.build if rows.empty? || @add_allowance_row %>
+    <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead>
+          <tr><th>Allowance</th><th class="w-40">% of basic</th><th class="w-20 text-center">Remove</th></tr>
+        </thead>
+        <tbody data-nested-rows-target="rows">
+          <% rows.each do |allowance| %>
+            <%= f.fields_for :allowances, allowance, include_id: false do |af| %>
+              <%= render "components/allowance_row", form: af, allowance: %>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <template data-nested-rows-target="template">
+      <%= f.fields_for :allowances, PayStructureAllowance.new, child_index: "NEW_RECORD" do |af| %>
+        <%= render "components/allowance_row", form: af, allowance: af.object %>
+      <% end %>
+    </template>
+    <button type="submit" name="add_allowance" value="1" class="btn btn-ghost btn-sm" data-action="nested-rows#add">
+      + Add allowance
+    </button>
+  </section>
+
+  <div class="card-actions justify-between items-center pt-2">
+    <%= link_to "Cancel", country_path(@country), class: "btn btn-ghost" %>
+    <%= f.submit "Save pay structure", class: "btn btn-primary" %>
+  </div>
+<% end %>

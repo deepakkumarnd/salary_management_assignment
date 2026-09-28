@@ -7,3 +7,8 @@ en:
         standard_hours_per_week: "Standard hours per week"
       user:
         full_name: "Name"
+      pay_structure:
+        job_role: "Job role"
+        default_basic_pay: "Default basic pay"
+        variable_pay_percent: "Target variable pay"
+        overtime_percent: "Overtime rate"

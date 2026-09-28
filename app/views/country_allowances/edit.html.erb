@@ -1,0 +1,11 @@
+<% content_for :title, "Edit country allowance · #{@country.name} · Salary Management" %>
+
+<div class="max-w-xl mx-auto card bg-base-100 shadow-sm">
+  <div class="card-body gap-4">
+    <div>
+      <h1 class="card-title text-2xl">Edit country allowance</h1>
+      <p class="text-base-content/70">Paid to everyone in <%= @country.name %>, whatever their role, as a % of basic pay.</p>
+    </div>
+    <%= render "country_allowances/form", allowance: @allowance, url: country_allowance_path(@country, @allowance), method: :patch %>
+  </div>
+</div>

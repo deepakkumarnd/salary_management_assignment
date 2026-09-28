@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_100005) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_120001) do
   create_table "countries", force: :cascade do |t|
     t.string "name", null: false
     t.string "currency_code", limit: 3, null: false
@@ -74,6 +74,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_100005) do
     t.check_constraint "standard_hours_per_week BETWEEN 1 AND 80", name: "organizations_hours_range"
   end
 
+  create_table "pay_structure_allowances", force: :cascade do |t|
+    t.integer "pay_structure_id", null: false
+    t.string "name", null: false, collation: "NOCASE"
+    t.integer "percent_bp", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["pay_structure_id", "name"], name: "index_pay_structure_allowances_on_pay_structure_id_and_name", unique: true
+    t.index ["pay_structure_id"], name: "index_pay_structure_allowances_on_pay_structure_id"
+    t.check_constraint "percent_bp BETWEEN 1 AND 20000", name: "pay_structure_allowances_percent_range"
+  end
+
+  create_table "pay_structures", force: :cascade do |t|
+    t.integer "organization_id", null: false
+    t.integer "country_id", null: false
+    t.integer "job_role_id", null: false
+    t.integer "default_basic_pay", null: false
+    t.integer "variable_pay_percent_bp", default: 0, null: false
+    t.integer "overtime_percent_bp", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.integer "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["country_id", "job_role_id"], name: "index_pay_structures_on_country_id_and_job_role_id", unique: true
+    t.index ["job_role_id"], name: "index_pay_structures_on_job_role_id"
+    t.index ["organization_id"], name: "index_pay_structures_on_organization_id"
+    t.index ["updated_by_id"], name: "index_pay_structures_on_updated_by_id"
+    t.check_constraint "default_basic_pay > 0", name: "pay_structures_basic_positive"
+    t.check_constraint "overtime_percent_bp BETWEEN 0 AND 40000", name: "pay_structures_overtime_range"
+    t.check_constraint "variable_pay_percent_bp BETWEEN 0 AND 20000", name: "pay_structures_variable_range"
+  end
+
   create_table "users", force: :cascade do |t|
     t.integer "organization_id", null: false
     t.string "full_name", null: false
@@ -102,6 +133,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_100005) do
   add_foreign_key "job_roles", "organizations", on_delete: :cascade
   add_foreign_key "organization_countries", "countries", on_delete: :restrict
   add_foreign_key "organization_countries", "organizations", on_delete: :cascade
+  add_foreign_key "pay_structure_allowances", "pay_structures", on_delete: :cascade
+  add_foreign_key "pay_structures", "countries", on_delete: :restrict
+  add_foreign_key "pay_structures", "job_roles", on_delete: :restrict
+  add_foreign_key "pay_structures", "organizations", on_delete: :cascade
+  add_foreign_key "pay_structures", "users", column: "updated_by_id", on_delete: :nullify
   add_foreign_key "users", "organizations", on_delete: :restrict
   add_foreign_key "users", "users", column: "deactivated_by_id", on_delete: :restrict
 end

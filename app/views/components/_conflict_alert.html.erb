@@ -1,0 +1,14 @@
+<%# locals: (latest:, noun:) %>
+<%# Shown on a 409, when a colleague saved the record while this user was editing it. %>
+<div role="alert" class="alert alert-warning items-start">
+  <div>
+    <p class="font-semibold">
+      <%= latest.updated_by&.full_name || "Someone else" %> changed this <%= noun %>
+      on <%= local_time(latest.updated_at) %>.
+    </p>
+    <p>
+      Your changes are still in the form, and their saved values are shown under each field that differs.
+      Save again to replace their changes with yours, or cancel to keep theirs.
+    </p>
+  </div>
+</div>

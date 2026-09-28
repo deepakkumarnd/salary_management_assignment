@@ -225,12 +225,12 @@ RSpec.describe "Onboarding", type: :request do
   end
 
   describe "finishing" do
-    it "completes setup and opens the app" do
+    it "completes setup and opens Pay policy, where the first pay structures are created" do
       complete_setup_data
 
       post onboarding_completion_path
 
-      expect(response).to redirect_to(authenticated_root_path)
+      expect(response).to redirect_to(countries_path)
       expect(organization.reload).to be_setup_completed
       follow_redirect!
       expect(response).to have_http_status(:ok)
