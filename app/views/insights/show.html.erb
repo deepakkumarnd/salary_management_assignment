@@ -37,6 +37,11 @@
       <div class="stat-value text-2xl tabular-nums"><%= money(summary.total_target.median, currency) %></div>
       <div class="stat-desc">Gross + target variable pay</div>
     </div>
+    <div class="stat">
+      <div class="stat-title">Total cost to company</div>
+      <div class="stat-value text-2xl tabular-nums"><%= money(summary.cost_to_company, currency) %></div>
+      <div class="stat-desc">Everyone's total target pay, per year</div>
+    </div>
   </div>
 
   <% if summary.headcount.zero? %>

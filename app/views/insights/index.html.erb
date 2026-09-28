@@ -17,11 +17,13 @@
           <tr>
             <th rowspan="2">Country</th>
             <th rowspan="2" class="text-right">Headcount</th>
+            <th rowspan="2" class="text-right">Total cost to company</th>
             <th rowspan="2">Pay</th>
             <th class="text-right">Min</th>
             <th class="text-right">Median</th>
             <th class="text-right">Average</th>
             <th class="text-right">Max</th>
+            <th class="text-right">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -32,7 +34,8 @@
               <tr class="border-t-2 border-base-300">
                 <td class="font-semibold"><%= report.country.name %> <span class="badge badge-ghost badge-sm font-mono"><%= currency %></span></td>
                 <td class="text-right tabular-nums">0</td>
-                <td colspan="5" class="text-base-content/60">No current employees</td>
+                <td class="text-right tabular-nums">—</td>
+                <td colspan="6" class="text-base-content/60">No current employees</td>
               </tr>
             <% else %>
               <% measures.each_with_index do |(key, label), index| %>
@@ -43,6 +46,7 @@
                       <span class="badge badge-ghost badge-sm font-mono"><%= currency %></span>
                     </td>
                     <td rowspan="3" class="align-top text-right tabular-nums font-semibold"><%= number_with_delimiter(summary.headcount) %></td>
+                    <td rowspan="3" class="align-top text-right tabular-nums font-semibold"><%= money(summary.cost_to_company, currency) %></td>
                   <% end %>
                   <td class="<%= "font-semibold" if key == :total_target %>"><%= label %></td>
                   <%= render "insights/stats_cells", stats: summary.public_send(key), currency: %>
@@ -55,7 +59,8 @@
     </div>
   </div>
   <p class="text-sm text-base-content/60">
-    Gross = basic + allowances. Total target = gross + target variable pay (at 100% performance). Select a country to see
-    its figures by job role and department.
+    Gross = basic + allowances. Total target = gross + target variable pay (at 100% performance). Total cost to company
+    = everyone's total target pay for a year, in the country's currency (no overtime or employer statutory costs).
+    Select a country to see its figures by job role and department.
   </p>
 </div>

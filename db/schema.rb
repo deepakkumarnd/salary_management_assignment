@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_140002) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_160001) do
   create_table "countries", force: :cascade do |t|
     t.string "name", null: false
     t.string "currency_code", limit: 3, null: false
@@ -104,6 +104,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_140002) do
     t.datetime "setup_completed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "pay_data_version", default: 0, null: false
     t.check_constraint "employee_code_prefix NOT GLOB '*[^A-Z]*' AND length(employee_code_prefix) BETWEEN 2 AND 6", name: "organizations_prefix_format"
     t.check_constraint "standard_hours_per_week BETWEEN 1 AND 80", name: "organizations_hours_range"
   end

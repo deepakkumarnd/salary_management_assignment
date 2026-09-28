@@ -32,6 +32,11 @@ class Organization < ApplicationRecord
 
   def setup_completed? = setup_completed_at.present?
 
+  # See BumpsPayDataVersion. An atomic increment, so concurrent changes never lose a bump.
+  def self.bump_pay_data_version(id)
+    where(id:).update_all("pay_data_version = pay_data_version + 1")
+  end
+
   # Replaces the operating countries with the chosen ones. A country can't be dropped while something in the
   # organization still uses it; then nothing changes and the reason is in #errors.
   def update_operating_countries(country_ids)

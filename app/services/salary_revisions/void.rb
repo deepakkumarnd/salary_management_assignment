@@ -31,6 +31,7 @@ module SalaryRevisions
       now = Time.current
       voided = SalaryRevision.where(id: revision.id, voided_at: nil)
                              .update_all(voided_at: now, voided_by_id: by.id, void_reason: reason, updated_at: now)
+      Organization.bump_pay_data_version(revision.organization_id) if voided == 1   # update_all skips callbacks
       voided == 1
     end
 

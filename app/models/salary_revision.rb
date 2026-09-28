@@ -1,6 +1,7 @@
 # One basic-pay value for an employee from its effective date onwards. Append-only: a mistake is voided (and usually
 # replaced through SalaryRevisions::Correct), never edited or deleted, so every past payment can be explained.
 class SalaryRevision < ApplicationRecord
+  include BumpsPayDataVersion
   include SameOrganization
   include WholeAmountAttribute
 

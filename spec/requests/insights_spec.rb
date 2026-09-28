@@ -27,6 +27,7 @@ RSpec.describe "Insights", type: :request do
       expect(response.body).to include("India", "INR", "₹10,00,000", "₹20,00,000", "₹15,00,000",   # basic min/max/median
                                        "₹14,00,000", "₹28,00,000",                                  # gross min/max
                                        "₹30,80,000",                                                # total target max
+                                       "Total cost to company", "₹46,20,000",                       # 15,40,000 + 30,80,000
                                        "Germany", "No current employees")
     end
 
@@ -41,7 +42,8 @@ RSpec.describe "Insights", type: :request do
       get insight_path(india)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Headcount", "Median basic", "₹15,00,000", "By job role", "Software Engineer",
+      expect(response.body).to include("Headcount", "Median basic", "₹15,00,000", "Total cost to company", "₹46,20,000",
+                                       "By job role", "Software Engineer",
                                        "By department", "Engineering")
     end
 

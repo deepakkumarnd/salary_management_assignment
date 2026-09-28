@@ -1,4 +1,6 @@
 class Department < ApplicationRecord
+  include BumpsPayDataVersion
+
   belongs_to :organization
   has_many :employees, dependent: :restrict_with_error
 

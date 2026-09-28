@@ -4,7 +4,7 @@ RSpec.describe SalaryStats do
   it "gives count, min, max, average and median" do
     stats = described_class.new([ 300, 100, 200 ])
 
-    expect(stats).to have_attributes(count: 3, min: 100, max: 300, average: 200, median: 200)
+    expect(stats).to have_attributes(count: 3, min: 100, max: 300, average: 200, median: 200, total: 600)
   end
 
   it "takes the median of an even count as the mean of the middle two" do
@@ -26,8 +26,13 @@ RSpec.describe SalaryStats do
     expect(described_class.new([ 500 ])).to have_attributes(count: 1, min: 500, max: 500, average: 500, median: 500)
   end
 
+  it "compares by value" do
+    expect(described_class.new([ 1, 2 ])).to eq(described_class.new([ 2, 1 ]))
+    expect(described_class.new([ 1, 2 ])).not_to eq(described_class.new([ 1, 3 ]))
+  end
+
   it "has no figures for an empty set" do
-    expect(described_class.new([])).to have_attributes(count: 0, min: nil, max: nil, average: nil, median: nil)
+    expect(described_class.new([])).to have_attributes(count: 0, min: nil, max: nil, average: nil, median: nil, total: 0)
     expect(described_class.new([])).to be_empty
   end
 end

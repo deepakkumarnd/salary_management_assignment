@@ -1,5 +1,6 @@
 # An allowance paid to every employee of the organization in a country, as a % of basic (e.g. HRA 40% in India).
 class CountryAllowance < ApplicationRecord
+  include BumpsPayDataVersion
   include OperatingCountry
   include PercentAttribute
   include TracksUpdatedBy

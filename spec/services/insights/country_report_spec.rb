@@ -37,6 +37,8 @@ RSpec.describe Insights::CountryReport do
     expect(summary.basic).to have_attributes(min: 600_000, max: 2_000_000, median: 1_000_000, average: 1_200_000)
     expect(summary.gross).to have_attributes(min: 840_000, max: 3_000_000, median: 1_500_000, average: 1_780_000)
     expect(summary.total_target).to have_attributes(min: 840_000, max: 3_300_000, median: 1_650_000, average: 1_930_000)
+    expect(summary.cost_to_company).to eq(5_790_000)   # total target pay: 1,650,000 + 3,300,000 + 840,000
+    expect(summary.gross.total).to eq(5_340_000)
   end
 
   it "uses the basic in force today: backdated revisions count, scheduled ones don't" do
@@ -74,6 +76,7 @@ RSpec.describe Insights::CountryReport do
       .to eq([ [ "Software Engineer", 2, 1_500_000 ], [ "Accountant", 1, 600_000 ] ])
     expect(report.by_department.map { [ it.name, it.headcount, it.gross.max ] })
       .to eq([ [ "Finance", 2, 3_000_000 ], [ "Engineering", 1, 1_500_000 ] ])
+    expect(report.by_department.map(&:cost_to_company)).to eq([ 3_300_000 + 840_000, 1_650_000 ])
   end
 
   it "reflects a change to an allowance percentage immediately" do
@@ -95,6 +98,64 @@ RSpec.describe Insights::CountryReport do
     5.times { hire(accountant_india, 600_000, department: finance) }
 
     expect(count_queries { described_class.new(organization, india, today:).summary }).to be <= queries + 1
+  end
+
+  describe "caching" do
+    let(:cache) { ActiveSupport::Cache::MemoryStore.new }
+    let(:user) { create(:user, organization:) }
+    let!(:employee) { hire(accountant_india, 1_000_000) }
+
+    def cached_report(on: today) = described_class.new(organization, india, today: on, cache:)
+
+    def employee_queries(&block)
+      count = 0
+      counter = ->(*, payload) { count += 1 if payload[:sql].include?(%(FROM "employees")) }
+      ActiveSupport::Notifications.subscribed(counter, "sql.active_record", &block)
+      count
+    end
+
+    it "computes once and serves later reports from the cache" do
+      expect(cached_report.summary.gross.max).to eq(1_400_000)
+      expect(employee_queries { cached_report.summary; cached_report.by_job_role; cached_report.by_department }).to eq(0)
+    end
+
+    {
+      "a country allowance changes"   => ->(t) { CountryAllowance.find_by!(name: "HRA").update!(percent: "50") },
+      "a role allowance is added"     => ->(t) { t.create(:pay_structure_allowance, pay_structure: t.accountant_india, name: "Meal", percent_bp: 1_000) },
+      "a salary revision is recorded" => ->(t) { t.create(:salary_revision, employee: t.employee, effective_on: Date.new(2026, 4, 1), basic_pay: 2_000_000) },
+      "an employee leaves"            => ->(t) { t.employee.update!(employment_end_date: Date.new(2026, 8, 31), exit_reason: "resignation") },
+      "someone is hired"              => ->(t) { t.hire(t.accountant_india, 5_000_000) }
+    }.each do |change, apply|
+      it "recomputes when #{change}" do
+        before = cached_report.summary
+        apply.call(self)
+        after = cached_report.summary
+
+        expect([ after.headcount, after.gross.max ]).not_to eq([ before.headcount, before.gross.max ])
+        expect(after).to eq(described_class.new(organization, india, today:, cache: ActiveSupport::Cache::NullStore.new).summary)
+      end
+    end
+
+    it "recomputes when a revision is voided (a bulk update)" do
+      revision = create(:salary_revision, employee:, effective_on: Date.new(2026, 4, 1), basic_pay: 2_000_000)
+      expect(cached_report.summary.basic.max).to eq(2_000_000)
+
+      SalaryRevisions::Void.new(revision, by: user, reason: "Wrong").call
+
+      expect(cached_report.summary.basic.max).to eq(1_000_000)
+    end
+
+    it "recomputes on a new day, when statuses and scheduled revisions may have changed" do
+      create(:salary_revision, employee:, effective_on: Date.new(2026, 9, 29), basic_pay: 1_100_000)
+      expect(cached_report.summary.basic.max).to eq(1_000_000)
+      expect(cached_report(on: Date.new(2026, 9, 29)).summary.basic.max).to eq(1_100_000)
+    end
+
+    it "keeps organizations and countries apart" do
+      cached_report.summary
+      germany_report = described_class.new(organization, germany, today:, cache:)
+      expect(germany_report.summary.headcount).to eq(0)
+    end
   end
 
   def count_queries(&block)

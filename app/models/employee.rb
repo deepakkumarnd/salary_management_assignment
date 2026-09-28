@@ -1,6 +1,7 @@
 # A person's employment: identity, country (fixed), role, department, hire date and, once they leave, last working day
 # and exit reason. Holds no pay amount itself: pay lives in salary revisions. Employees are never deleted.
 class Employee < ApplicationRecord
+  include BumpsPayDataVersion
   include OperatingCountry
   include SameOrganization
   include TracksUpdatedBy
@@ -112,6 +113,7 @@ class Employee < ApplicationRecord
     SalaryRevision.where(id: old.id, voided_at: nil)
                   .update_all(voided_at: Time.current, voided_by_id: hire_revision_author.id, void_reason:,
                               updated_at: Time.current)
+    Organization.bump_pay_data_version(organization_id)   # update_all skips callbacks
     SalaryRevision.create!(organization:, employee: self, reason: "hire", effective_on: hire_date,
                            basic_pay: old.basic_pay, notes: old.notes, created_by: hire_revision_author)
   end

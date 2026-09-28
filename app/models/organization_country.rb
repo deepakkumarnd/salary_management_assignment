@@ -1,5 +1,7 @@
 # A country the organization operates in.
 class OrganizationCountry < ApplicationRecord
+  include BumpsPayDataVersion
+
   belongs_to :organization
   belongs_to :country
 

@@ -1,4 +1,6 @@
 class JobRole < ApplicationRecord
+  include BumpsPayDataVersion
+
   belongs_to :organization
   has_many :pay_structures, dependent: :restrict_with_error
   has_many :employees, dependent: :restrict_with_error

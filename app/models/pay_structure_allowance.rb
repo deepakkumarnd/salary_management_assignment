@@ -1,5 +1,6 @@
 # An allowance for one country + role only, on top of the country's allowances (e.g. Special 15% for engineers).
 class PayStructureAllowance < ApplicationRecord
+  include BumpsPayDataVersion
   include PercentAttribute
 
   belongs_to :pay_structure, inverse_of: :allowances
@@ -13,6 +14,8 @@ class PayStructureAllowance < ApplicationRecord
   validate :name_not_used_by_a_country_allowance
 
   private
+
+  def pay_data_organization_id = pay_structure.organization_id
 
   def name_not_used_by_a_country_allowance
     conflict = AllowanceNameGuard.conflict_for_role_allowance(self)

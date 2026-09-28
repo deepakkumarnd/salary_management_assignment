@@ -4,30 +4,54 @@ module Insights
   #
   # Current = employed today (Active + Leaving), leaving out records ended as "recorded in error". The rows come from
   # one query (basic as of today via the salary-revisions subquery); pay structures and allowances are loaded once and
-  # PayCalculator runs in Ruby, so the rounding rules live in one place. Milliseconds at 10k employees.
+  # PayCalculator runs in Ruby, so the rounding rules live in one place.
+  #
+  # Results are cached per organization, country and day. The key includes the organization's pay_data_version,
+  # which every change to employees, revisions, pay policy or catalogues bumps (BumpsPayDataVersion), so a cached
+  # report is never stale; the date covers what changes by itself overnight (statuses, scheduled revisions).
   #
   #   report = Insights::CountryReport.new(Current.organization, country)
   #   report.summary.gross.median
   #   report.by_job_role.each { |group| group.name; group.headcount; group.total_target.max }
   class CountryReport
-    Group = Data.define(:name, :headcount, :basic, :gross, :total_target)
+    Group = Data.define(:name, :headcount, :basic, :gross, :total_target) do
+      # What the group costs per year at target: everyone's gross + target variable pay (overtime isn't recorded,
+      # and employer statutory contributions are out of scope). In the country's currency.
+      def cost_to_company = total_target.total
+    end
     Row = Data.define(:job_role_id, :department_id, :basic, :gross, :total_target)
+
+    CACHE_VERSION = 2           # bump when the shape of the cached results changes (2: totals)
+    CACHE_EXPIRY = 1.day        # the key already changes daily; this just clears out old entries
 
     attr_reader :organization, :country, :today
 
-    def initialize(organization, country, today: Date.current)
+    def initialize(organization, country, today: Date.current, cache: Rails.cache)
       @organization = organization
       @country = country
       @today = today
+      @cache = cache
     end
 
-    def summary = @summary ||= group("All employees", rows)
-
-    def by_job_role = @by_job_role ||= breakdown(:job_role_id, organization.job_roles)
-
-    def by_department = @by_department ||= breakdown(:department_id, organization.departments)
+    def summary = results.fetch(:summary)
+    def by_job_role = results.fetch(:by_job_role)
+    def by_department = results.fetch(:by_department)
 
     private
+
+    def results
+      @results ||= @cache.fetch(cache_key, expires_in: CACHE_EXPIRY) do
+        { summary: group("All employees", rows),
+          by_job_role: breakdown(:job_role_id, organization.job_roles),
+          by_department: breakdown(:department_id, organization.departments) }
+      end
+    end
+
+    # Read fresh: the organization in memory may predate changes made during this request.
+    def cache_key
+      version = Organization.where(id: organization.id).pick(:pay_data_version)
+      [ "insights/country_report", CACHE_VERSION, organization.id, country.id, today.iso8601, version ]
+    end
 
     def rows
       @rows ||= begin

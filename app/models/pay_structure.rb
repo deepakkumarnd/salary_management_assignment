@@ -1,6 +1,7 @@
 # How one job role is paid in one country: default basic pay (pre-fills new hires), role allowances on top of the
 # country's, a target variable pay (% of gross) and an overtime rate (% of hourly basic).
 class PayStructure < ApplicationRecord
+  include BumpsPayDataVersion
   include OperatingCountry
   include PercentAttribute
   include TracksUpdatedBy
