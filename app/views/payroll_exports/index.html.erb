@@ -1,0 +1,44 @@
+<% content_for :title, "Payroll export · Salary Management" %>
+
+<div class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold">Payroll export</h1>
+    <p class="text-base-content/70">
+      A CSV for a country's payroll provider: everyone employed in the month, with monthly pay prorated by calendar days,
+      arrears, deductions and net pay before tax. Check the summary, then download.
+    </p>
+  </div>
+
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body"><%= render "payroll_exports/chooser" %></div>
+  </div>
+
+  <section class="card bg-base-100 shadow-sm" aria-labelledby="export-log">
+    <div class="card-body">
+      <h2 id="export-log" class="card-title">Recent exports</h2>
+      <% if @exports.empty? %>
+        <p class="text-base-content/70">No payroll files have been downloaded yet.</p>
+      <% else %>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+              <tr><th>When</th><th>Who</th><th>Country</th><th>Month</th><th class="text-right">Rows</th><th>Checksum (SHA-256)</th></tr>
+            </thead>
+            <tbody>
+              <% @exports.each do |export| %>
+                <tr>
+                  <td class="whitespace-nowrap"><%= local_time(export.created_at) %></td>
+                  <td><%= export.exported_by.full_name %><%= " (former)" unless export.exported_by.active? %></td>
+                  <td><%= export.country.name %></td>
+                  <td><%= link_to export.month.label, new_payroll_export_path(country_id: export.country_id, month: export.month.to_param), class: "link" %></td>
+                  <td class="text-right tabular-nums"><%= number_with_delimiter(export.row_count) %></td>
+                  <td class="font-mono text-xs" title="<%= export.sha256 %>"><%= export.sha256.first(12) %>…</td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </section>
+</div>

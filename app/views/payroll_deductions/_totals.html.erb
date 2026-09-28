@@ -1,0 +1,10 @@
+<%# locals: (country_id:, month:, deductions:) %>
+<% deductions = deductions.to_a %>
+<% leave = deductions.select(&:unpaid_leave?) %>
+<% others = deductions.select(&:other?) %>
+<div id="<%= deduction_totals_id(country_id, month) %>" class="flex flex-wrap gap-6 text-sm px-4 py-3 border-t border-base-300" role="status">
+  <span><strong class="tabular-nums"><%= format("%.1f", leave.sum(&:unpaid_half_days) / 2.0) %></strong> unpaid days
+    (<%= pluralize(leave.size, "person") %>)</span>
+  <span><strong class="tabular-nums"><%= money(others.sum(&:amount), Country.find(country_id).currency_code) %></strong> other deductions
+    (<%= pluralize(others.map(&:employee_id).uniq.size, "person") %>)</span>
+</div>

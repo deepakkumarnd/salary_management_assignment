@@ -1,0 +1,66 @@
+<% country = @run.country %>
+<% month = @run.month %>
+<% currency = country.currency_code %>
+<% summary = @run.summary %>
+<% content_for :title, "#{country.name} payroll · #{month.label} · Salary Management" %>
+
+<div class="space-y-6">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><%= link_to "Payroll export", payroll_exports_path %></li>
+      <li><%= country.name %> · <%= month.label %></li>
+    </ul>
+  </div>
+
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body"><%= render "payroll_exports/chooser", country:, month: %></div>
+  </div>
+
+  <div>
+    <h1 class="text-2xl font-bold"><%= country.name %> payroll · <%= month.label %></h1>
+    <p class="text-base-content/70">Monthly amounts in <%= currency %>, before tax.</p>
+  </div>
+
+  <div class="stats stats-vertical sm:stats-horizontal bg-base-100 shadow-sm w-full" aria-label="People">
+    <div class="stat"><div class="stat-title">In the file</div><div class="stat-value tabular-nums"><%= number_with_delimiter(summary.headcount) %></div></div>
+    <div class="stat"><div class="stat-title">Joiners</div><div class="stat-value tabular-nums"><%= summary.joiners %></div></div>
+    <div class="stat"><div class="stat-title">Leavers</div><div class="stat-value tabular-nums"><%= summary.leavers %></div></div>
+    <div class="stat"><div class="stat-title">Pay changes</div><div class="stat-value tabular-nums"><%= summary.pay_changes %></div></div>
+    <div class="stat"><div class="stat-title">With arrears</div><div class="stat-value tabular-nums"><%= summary.with_arrears %></div></div>
+  </div>
+
+  <div class="stats stats-vertical sm:stats-horizontal bg-base-100 shadow-sm w-full" aria-label="Money">
+    <div class="stat"><div class="stat-title">Gross</div><div class="stat-value text-2xl tabular-nums"><%= money(summary.gross, currency) %></div></div>
+    <div class="stat"><div class="stat-title">Arrears</div><div class="stat-value text-2xl tabular-nums"><%= money(summary.arrears, currency) %></div></div>
+    <div class="stat">
+      <div class="stat-title">Deductions</div>
+      <div class="stat-value text-2xl tabular-nums"><%= money(summary.unpaid_leave + summary.other_deductions, currency) %></div>
+      <div class="stat-desc">Unpaid leave <%= money(summary.unpaid_leave, currency) %> · other <%= money(summary.other_deductions, currency) %></div>
+    </div>
+    <div class="stat"><div class="stat-title">Net pay before tax</div><div class="stat-value text-2xl tabular-nums"><%= money(summary.net, currency) %></div></div>
+  </div>
+
+  <% @run.warnings.each do |warning| %>
+    <div role="alert" class="alert alert-warning alert-soft items-start">
+      <div>
+        <p class="font-semibold"><%= warning.message %></p>
+        <% if warning.employees.any? %>
+          <p class="text-sm">
+            <%= safe_join(warning.employees.map { link_to "#{it.full_name} (#{it.employee_code})", employee_path(it, tab: "deductions"), class: "link" }, ", ") %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <%= button_to "Download CSV", payroll_exports_path, params: { country_id: country.id, month: month.to_param },
+                  class: "btn btn-primary", data: { turbo: false } %>
+    <%= link_to "Deductions for #{month.label}", month_deductions_path(month.to_param, country_id: country.id), class: "btn" %>
+  </div>
+
+  <p class="text-sm text-base-content/60">
+    Known limitation: past months use today's policy percentages, role and department. Export the current month for payroll.
+    Every download is logged with its checksum; arrears next month are measured from the latest export of this month.
+  </p>
+</div>

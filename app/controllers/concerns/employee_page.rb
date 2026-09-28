@@ -16,6 +16,7 @@ module EmployeePage
     @breakdown = @employee.breakdown_on(@pay_date)
     @next_revision = @employee.next_revision_after(@pay_date) unless @employee.exited?(@today)
     @revisions = @employee.salary_revisions.includes(:created_by, :voided_by).order(effective_on: :desc, created_at: :desc)
+    @deductions = @employee.payroll_deductions.order(:id).to_a
   end
 
   def refuse_if_exited

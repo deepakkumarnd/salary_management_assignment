@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_160001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_180002) do
   create_table "countries", force: :cascade do |t|
     t.string "name", null: false
     t.string "currency_code", limit: 3, null: false
@@ -140,6 +140,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_160001) do
     t.check_constraint "variable_pay_percent_bp BETWEEN 0 AND 20000", name: "pay_structures_variable_range"
   end
 
+  create_table "payroll_deductions", force: :cascade do |t|
+    t.integer "organization_id", null: false
+    t.integer "employee_id", null: false
+    t.date "period_start", null: false
+    t.string "kind", null: false
+    t.integer "unpaid_half_days"
+    t.integer "amount"
+    t.string "description"
+    t.integer "lock_version", default: 0, null: false
+    t.integer "created_by_id", null: false
+    t.integer "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_payroll_deductions_on_created_by_id"
+    t.index ["employee_id", "period_start"], name: "one_unpaid_leave_per_employee_month", unique: true, where: "kind = 'unpaid_leave'"
+    t.index ["employee_id"], name: "index_payroll_deductions_on_employee_id"
+    t.index ["organization_id", "period_start"], name: "index_payroll_deductions_on_organization_id_and_period_start"
+    t.index ["updated_by_id"], name: "index_payroll_deductions_on_updated_by_id"
+    t.check_constraint "(kind = 'unpaid_leave' AND unpaid_half_days > 0 AND amount IS NULL AND description IS NULL) OR (kind = 'other' AND amount > 0 AND description IS NOT NULL AND unpaid_half_days IS NULL)", name: "payroll_deductions_kind_fields"
+    t.check_constraint "kind IN ('unpaid_leave','other')", name: "payroll_deductions_kind"
+    t.check_constraint "period_start = date(period_start, 'start of month')", name: "payroll_deductions_month_start"
+  end
+
+  create_table "payroll_exports", force: :cascade do |t|
+    t.integer "organization_id", null: false
+    t.integer "country_id", null: false
+    t.date "period_start", null: false
+    t.integer "row_count", null: false
+    t.string "sha256", null: false
+    t.integer "exported_by_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["country_id"], name: "index_payroll_exports_on_country_id"
+    t.index ["exported_by_id"], name: "index_payroll_exports_on_exported_by_id"
+    t.index ["organization_id", "country_id", "period_start", "created_at"], name: "index_payroll_exports_for_cutoff"
+    t.index ["organization_id", "created_at"], name: "index_payroll_exports_on_organization_id_and_created_at"
+  end
+
   create_table "salary_revisions", force: :cascade do |t|
     t.integer "organization_id", null: false
     t.integer "employee_id", null: false
@@ -202,6 +239,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_160001) do
   add_foreign_key "pay_structures", "job_roles", on_delete: :restrict
   add_foreign_key "pay_structures", "organizations", on_delete: :cascade
   add_foreign_key "pay_structures", "users", column: "updated_by_id", on_delete: :nullify
+  add_foreign_key "payroll_deductions", "employees", on_delete: :restrict
+  add_foreign_key "payroll_deductions", "organizations", on_delete: :cascade
+  add_foreign_key "payroll_deductions", "users", column: "created_by_id", on_delete: :restrict
+  add_foreign_key "payroll_deductions", "users", column: "updated_by_id", on_delete: :restrict
+  add_foreign_key "payroll_exports", "countries", on_delete: :restrict
+  add_foreign_key "payroll_exports", "organizations", on_delete: :cascade
+  add_foreign_key "payroll_exports", "users", column: "exported_by_id", on_delete: :restrict
   add_foreign_key "salary_revisions", "employees", on_delete: :restrict
   add_foreign_key "salary_revisions", "organizations", on_delete: :cascade
   add_foreign_key "salary_revisions", "users", column: "created_by_id", on_delete: :restrict

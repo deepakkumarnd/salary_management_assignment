@@ -1,0 +1,13 @@
+<%# locals: (country: nil, month: nil) %>
+<%= form_with url: new_payroll_export_path, method: :get, class: "grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end" do |f| %>
+  <fieldset class="fieldset">
+    <%= f.label :country_id, "Country", class: "fieldset-legend" %>
+    <%= f.select :country_id, options_from_collection_for_select(@countries, :id, :name, country&.id), {}, class: "select w-full" %>
+  </fieldset>
+  <fieldset class="fieldset">
+    <%= f.label :month, "Pay month", class: "fieldset-legend" %>
+    <%= f.select :month, options_for_select(@months.map { [ it.label, it.to_param ] }, (month || @current_month).to_param), {},
+                 class: "select w-full" %>
+  </fieldset>
+  <%= f.submit "Show summary", name: nil, class: "btn btn-primary" %>
+<% end %>

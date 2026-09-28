@@ -1,0 +1,50 @@
+<% content_for :title, "Deductions · #{@month.label} · Salary Management" %>
+
+<div class="space-y-4">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">Deductions · <%= @month.label %></h1>
+      <p class="text-base-content/70">
+        Unpaid leave (in half days) and other deductions for everyone on the <%= @country&.name %> payroll this month.
+        Changes save row by row.
+      </p>
+    </div>
+    <% if @country %>
+      <%= link_to "Payroll export for #{@month.label}", new_payroll_export_path(country_id: @country.id, month: @month.to_param), class: "btn btn-sm" %>
+    <% end %>
+  </div>
+
+  <% open_months = PayrollDeduction.open_months %>
+  <% unless @month.in?(open_months) %>
+    <div role="note" class="alert alert-info alert-soft">
+      <span>
+        <%= @month.label %> is closed<%= @month < open_months.first ? ": its payroll has gone out" : " for now" %>.
+        Deductions can be added or changed for
+        <%= safe_join(open_months.map { link_to it.label, month_deductions_path(it.to_param, country_id: @country&.id), class: "link" }, ", ") %>.
+      </span>
+    </div>
+  <% end %>
+
+  <%= form_with url: deductions_path, method: :get, class: "card bg-base-100 shadow-sm" do |f| %>
+    <div class="card-body p-4 grid gap-3 sm:grid-cols-[1fr_1fr_2fr_auto] items-end">
+      <%= f.select :country_id, options_from_collection_for_select(@countries, :id, :name, @country&.id), {},
+                   class: "select w-full", aria: { label: "Country" } %>
+      <%= f.month_field :month, value: @month.to_param, class: "input w-full", aria: { label: "Month" } %>
+      <%= f.search_field :q, value: @q, placeholder: "Name or employee ID", class: "input w-full", aria: { label: "Search the roster" } %>
+      <%= f.submit "Show", name: nil, class: "btn" %>
+    </div>
+  <% end %>
+
+  <div class="card bg-base-100 shadow-sm">
+    <% if @employees.empty? %>
+      <div class="card-body"><p class="text-base-content/70">Nobody <%= @q ? "matching “#{@q}” " : "" %>is on this payroll in <%= @month.label %>.</p></div>
+    <% else %>
+      <%= render "payroll_deductions/table", label: :employee,
+                 rows: @employees.includes(:country).map { [ it, @month, @deductions.fetch(it.id, []) ] } %>
+    <% end %>
+    <% if @country %>
+      <%= render "payroll_deductions/totals", country_id: @country.id, month: @month,
+                 deductions: PayrollDeduction.where(employee: Payroll::Roster.employees(Current.organization, @country, @month), period_start: @month.start) %>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<%# locals: (rows:, label:) — rows: [[employee, month, deductions], …] %>
+<div class="overflow-x-auto">
+  <table class="table table-sm table-pin-rows">
+    <thead>
+      <tr>
+        <th><%= label == :employee ? "Employee" : "Month" %></th>
+        <th class="text-right">Days employed</th>
+        <th>Unpaid leave (days)</th>
+        <th>Other deductions</th>
+        <th class="text-right">Other total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% rows.each do |employee, month, deductions| %>
+        <%= render "payroll_deductions/row", employee:, month:, deductions:, label: %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

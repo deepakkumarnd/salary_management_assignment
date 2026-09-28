@@ -1,0 +1,98 @@
+<%# locals: (employee:, month:, deductions:, failed: nil, notice: nil, label: :employee) %>
+<%# One employee's deductions for one month, edited in place. label: :employee on the month page, :month on the
+    employee page. Every form sends row_label so the Turbo Stream response re-renders the same kind of row. %>
+<% currency = employee.country.currency_code %>
+<% days = month.days_employed(employee) %>
+<% leave = deductions.find(&:unpaid_leave?) %>
+<% others = deductions.select(&:other?) %>
+<% failed_leave = failed if failed&.unpaid_leave? %>
+<% failed_other = failed if failed&.other? && failed.new_record? %>   <%# a failed add refills the add form %>
+<% open = month.in?(PayrollDeduction.open_months) %>   <%# last, current and next month can be changed %>
+<tr id="<%= deduction_row_id(employee, month) %>" class="align-top">
+  <td class="whitespace-nowrap">
+    <% if label == :employee %>
+      <%= link_to employee.full_name, employee_path(employee, tab: "deductions"), class: "link link-hover font-semibold" %>
+      <div class="font-mono text-xs text-base-content/60"><%= employee.employee_code %></div>
+    <% else %>
+      <span class="font-semibold"><%= month.label %></span>
+    <% end %>
+    <% if notice %>
+      <div role="alert" class="text-warning text-xs mt-1 max-w-48 whitespace-normal"><%= notice %></div>
+    <% end %>
+  </td>
+  <td class="text-right tabular-nums"><%= days %></td>
+
+  <td>
+    <% leave_form = leave ? { url: payroll_deduction_path(leave), method: :patch } : { url: payroll_deductions_path, method: :post } %>
+    <% if open %>
+    <%= form_with **leave_form, scope: :payroll_deduction, class: "flex items-center gap-1" do |f| %>
+      <%= hidden_field_tag :row_label, label, id: nil %>
+      <% if leave %>
+        <%= f.hidden_field :lock_version, value: leave.lock_version, id: nil %>
+      <% else %>
+        <%= f.hidden_field :employee_id, value: employee.employee_code, id: nil %>
+        <%= f.hidden_field :month, value: month.to_param, id: nil %>
+        <%= f.hidden_field :kind, value: "unpaid_leave", id: nil %>
+      <% end %>
+      <%= f.number_field :unpaid_days, value: failed_leave&.unpaid_days || leave&.unpaid_days, step: 0.5, min: 0, max: days,
+                                       id: nil, placeholder: "0", class: class_names("input input-sm w-20", "input-error" => failed_leave),
+                                       aria: { label: "Unpaid days, #{employee.full_name}, #{month.label}" } %>
+      <%= f.submit "Save", class: "btn btn-ghost btn-xs", id: nil, aria: { label: "Save unpaid days" } %>
+    <% end %>
+    <% else %>
+      <span class="tabular-nums"><%= leave ? leave.unpaid_days : "—" %></span>
+    <% end %>
+    <% if failed_leave %>
+      <p class="text-error text-xs mt-1"><%= failed_leave.errors.full_messages.to_sentence %></p>
+    <% end %>
+  </td>
+
+  <td class="space-y-1">
+    <% others.each do |other| %>
+      <% unless open %>
+        <div><span class="tabular-nums"><%= money(other.amount, currency) %></span> · <%= other.description %></div>
+        <% next %>
+      <% end %>
+      <div class="flex items-center gap-1">
+        <%= form_with url: payroll_deduction_path(other), method: :patch, scope: :payroll_deduction, class: "flex items-center gap-1" do |f| %>
+          <%= hidden_field_tag :row_label, label, id: nil %>
+          <%= f.hidden_field :lock_version, value: other.lock_version, id: nil %>
+          <%= f.text_field :amount, value: grouped_amount(other.amount, currency), id: nil, inputmode: "numeric",
+                                    class: "input input-sm w-24", aria: { label: "Amount, #{other.description}" } %>
+          <%= f.text_field :description, value: other.description, id: nil, class: "input input-sm w-48",
+                                         aria: { label: "Description, #{other.description}" } %>
+          <%= f.submit "Save", class: "btn btn-ghost btn-xs", id: nil, aria: { label: "Save #{other.description}" } %>
+        <% end %>
+        <%= button_to "✕", payroll_deduction_path(other), method: :delete, params: { row_label: label },
+                      class: "btn btn-ghost btn-xs text-error", aria: { label: "Delete #{other.description}" },
+                      data: { turbo_confirm: "Delete “#{other.description}”?" } %>
+      </div>
+    <% end %>
+
+    <% if open %>
+    <%= form_with url: payroll_deductions_path, scope: :payroll_deduction, class: "flex items-center gap-1" do |f| %>
+      <%= hidden_field_tag :row_label, label, id: nil %>
+      <%= f.hidden_field :employee_id, value: employee.employee_code, id: nil %>
+      <%= f.hidden_field :month, value: month.to_param, id: nil %>
+      <%= f.hidden_field :kind, value: "other", id: nil %>
+      <%= f.text_field :amount, value: failed_other&.read_attribute_before_type_cast(:amount), id: nil, inputmode: "numeric",
+                                placeholder: currency_unit(currency).strip, class: class_names("input input-sm w-24", "input-error" => failed_other&.errors&.include?(:amount)),
+                                aria: { label: "New deduction amount, #{employee.full_name}, #{month.label}" } %>
+      <%= f.text_field :description, value: failed_other&.description, id: nil, placeholder: "e.g. Salary advance recovery",
+                                     class: class_names("input input-sm w-48", "input-error" => failed_other&.errors&.include?(:description)),
+                                     aria: { label: "New deduction description, #{employee.full_name}, #{month.label}" } %>
+      <%= f.submit "Add", class: "btn btn-ghost btn-xs", id: nil, aria: { label: "Add deduction" } %>
+    <% end %>
+    <% elsif others.empty? %>
+      <span class="text-base-content/50">—</span>
+    <% end %>
+    <% if failed && !failed_leave && !failed_other %>
+      <p class="text-error text-xs"><%= failed.errors.full_messages.to_sentence %></p>
+    <% end %>
+    <% if failed_other %>
+      <p class="text-error text-xs"><%= failed_other.errors.full_messages.to_sentence %></p>
+    <% end %>
+  </td>
+
+  <td class="text-right tabular-nums whitespace-nowrap"><%= money(others.sum(&:amount), currency) if others.any? %></td>
+</tr>

@@ -19,6 +19,7 @@ class Employee < ApplicationRecord
   belongs_to :pay_structure, foreign_key: %i[country_id job_role_id], primary_key: %i[country_id job_role_id],
                              optional: true
   has_many :salary_revisions, inverse_of: :employee, dependent: :restrict_with_error
+  has_many :payroll_deductions, dependent: :restrict_with_error
 
   enum :employment_type, { full_time: "full_time", part_time: "part_time", contractor: "contractor" }, validate: true
 

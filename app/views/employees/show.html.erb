@@ -1,7 +1,7 @@
 <% content_for :title, "#{@employee.full_name} · Employees · Salary Management" %>
 <% currency = @employee.country.currency_code %>
 <% exited = @employee.exited?(@today) %>
-<% tab = params[:tab].presence_in(%w[pay history employment]) || "pay" %>
+<% tab = params[:tab].presence_in(%w[pay history employment deductions]) || "pay" %>
 
 <div class="space-y-6">
   <div class="breadcrumbs text-sm">
@@ -97,6 +97,20 @@
           <dd class="whitespace-pre-line"><%= @employee.exit_notes || "None" %></dd>
         <% end %>
       </dl>
+    </div>
+
+    <input type="radio" name="employee_tabs" class="tab" aria-label="Deductions" <%= "checked" if tab == "deductions" %>>
+    <div class="tab-content bg-base-100 border-base-300 p-6">
+      <p class="text-sm text-base-content/70 mb-3">
+        Unpaid leave and other deductions by pay month. Deductions can still be entered for a leaver's employed months.
+      </p>
+      <% months = @employee.hire_date <= @today ? deduction_months(@employee, @deductions) : [] %>
+      <% if months.empty? %>
+        <p class="text-base-content/70">No pay months yet.</p>
+      <% else %>
+        <%= render "payroll_deductions/table", label: :month,
+                   rows: months.map { |month| [ @employee, month, @deductions.select { it.period_start == month.start } ] } %>
+      <% end %>
     </div>
   </div>
 </div>

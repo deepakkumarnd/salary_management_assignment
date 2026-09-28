@@ -37,6 +37,13 @@ Rails.application.routes.draw do
   # Pay insights per operating country (current employees, as of today), with a role / department drill-down
   resources :insights, only: %i[index show], param: :country_id
 
+  # Monthly deductions (unpaid leave, other) and the payroll export for a country and month
+  get "deductions", to: "payroll_deductions#index", as: :deductions                                   # → this month
+  get "deductions/:month", to: "payroll_deductions#index", as: :month_deductions,
+                           constraints: { month: /\d{4}-\d{2}/ }                                        # ?country_id=…&q=…
+  resources :payroll_deductions, only: %i[create update destroy]
+  resources :payroll_exports, only: %i[index new create]   # new = choose + summary; create = log + download
+
   mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

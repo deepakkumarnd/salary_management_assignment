@@ -79,3 +79,5 @@ gem "devise", "~> 5.0"
 gem "letter_opener_web", "~> 3.0", group: :development
 
 gem "pagy", "~> 43.6"
+
+gem "csv", "~> 3.3"
