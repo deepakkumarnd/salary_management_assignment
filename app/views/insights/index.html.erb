@@ -1,0 +1,61 @@
+<% content_for :title, "Insights · Salary Management" %>
+<% measures = { basic: "Basic", gross: "Gross", total_target: "Total target" } %>
+
+<div class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold">Insights</h1>
+    <p class="text-base-content/70">
+      Current employees (Active + Leaving) as of <%= Date.current.to_fs(:human) %>. Annual pay in each country's own
+      currency: figures are never mixed across currencies.
+    </p>
+  </div>
+
+  <div class="card bg-base-100 shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th rowspan="2">Country</th>
+            <th rowspan="2" class="text-right">Headcount</th>
+            <th rowspan="2">Pay</th>
+            <th class="text-right">Min</th>
+            <th class="text-right">Median</th>
+            <th class="text-right">Average</th>
+            <th class="text-right">Max</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @reports.each do |report| %>
+            <% summary = report.summary %>
+            <% currency = report.country.currency_code %>
+            <% if summary.headcount.zero? %>
+              <tr class="border-t-2 border-base-300">
+                <td class="font-semibold"><%= report.country.name %> <span class="badge badge-ghost badge-sm font-mono"><%= currency %></span></td>
+                <td class="text-right tabular-nums">0</td>
+                <td colspan="5" class="text-base-content/60">No current employees</td>
+              </tr>
+            <% else %>
+              <% measures.each_with_index do |(key, label), index| %>
+                <tr class="<%= "border-t-2 border-base-300" if index.zero? %>">
+                  <% if index.zero? %>
+                    <td rowspan="3" class="align-top">
+                      <%= link_to report.country.name, insight_path(report.country), class: "link link-primary font-semibold" %>
+                      <span class="badge badge-ghost badge-sm font-mono"><%= currency %></span>
+                    </td>
+                    <td rowspan="3" class="align-top text-right tabular-nums font-semibold"><%= number_with_delimiter(summary.headcount) %></td>
+                  <% end %>
+                  <td class="<%= "font-semibold" if key == :total_target %>"><%= label %></td>
+                  <%= render "insights/stats_cells", stats: summary.public_send(key), currency: %>
+                </tr>
+              <% end %>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="text-sm text-base-content/60">
+    Gross = basic + allowances. Total target = gross + target variable pay (at 100% performance). Select a country to see
+    its figures by job role and department.
+  </p>
+</div>

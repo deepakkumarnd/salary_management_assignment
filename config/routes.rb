@@ -34,6 +34,9 @@ Rails.application.routes.draw do
     resource :employment_end, only: %i[new create destroy]   # destroy = undo exit
   end
 
+  # Pay insights per operating country (current employees, as of today), with a role / department drill-down
+  resources :insights, only: %i[index show], param: :country_id
+
   mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

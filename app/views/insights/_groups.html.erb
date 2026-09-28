@@ -1,0 +1,37 @@
+<%# locals: (groups:, heading:, currency:) %>
+<%# One table per measure, switched with daisyUI tabs (pure CSS). %>
+<section class="card bg-base-100 shadow-sm" aria-label="<%= heading %>">
+  <div class="card-body">
+    <h2 class="card-title"><%= heading %></h2>
+    <div class="tabs tabs-box">
+      <% { basic: "Basic", gross: "Gross", total_target: "Total target" }.each_with_index do |(key, label), index| %>
+        <input type="radio" name="<%= heading.parameterize %>_measure" class="tab" aria-label="<%= label %>" <%= "checked" if index.zero? %>>
+        <div class="tab-content pt-3">
+          <div class="overflow-x-auto">
+            <table class="table table-sm table-zebra">
+              <thead>
+                <tr>
+                  <th><%= heading.delete_prefix("By ").capitalize %></th>
+                  <th class="text-right">Headcount</th>
+                  <th class="text-right">Min</th>
+                  <th class="text-right">Median</th>
+                  <th class="text-right">Average</th>
+                  <th class="text-right">Max</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% groups.each do |group| %>
+                  <tr>
+                    <td><%= group.name %></td>
+                    <td class="text-right tabular-nums"><%= number_with_delimiter(group.headcount) %></td>
+                    <%= render "insights/stats_cells", stats: group.public_send(key), currency: %>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,52 @@
+<% country = @report.country %>
+<% currency = country.currency_code %>
+<% summary = @report.summary %>
+<% content_for :title, "#{country.name} · Insights · Salary Management" %>
+
+<div class="space-y-6">
+  <div>
+    <div class="breadcrumbs text-sm">
+      <ul>
+        <li><%= link_to "Insights", insights_path %></li>
+        <li><%= country.name %></li>
+      </ul>
+    </div>
+    <h1 class="text-2xl font-bold flex items-center gap-2">
+      <%= country.name %> <span class="badge badge-ghost font-mono"><%= currency %></span>
+    </h1>
+    <p class="text-base-content/70">Current employees (Active + Leaving) as of <%= Date.current.to_fs(:human) %>. Annual pay in <%= currency %>.</p>
+  </div>
+
+  <div class="stats stats-vertical sm:stats-horizontal bg-base-100 shadow-sm w-full">
+    <div class="stat">
+      <div class="stat-title">Headcount</div>
+      <div class="stat-value tabular-nums"><%= number_with_delimiter(summary.headcount) %></div>
+    </div>
+    <div class="stat">
+      <div class="stat-title">Median basic</div>
+      <div class="stat-value text-2xl tabular-nums"><%= money(summary.basic.median, currency) %></div>
+      <div class="stat-desc"><%= money(summary.basic.min, currency) %> – <%= money(summary.basic.max, currency) %></div>
+    </div>
+    <div class="stat">
+      <div class="stat-title">Median gross</div>
+      <div class="stat-value text-2xl tabular-nums"><%= money(summary.gross.median, currency) %></div>
+      <div class="stat-desc">Average <%= money(summary.gross.average, currency) %></div>
+    </div>
+    <div class="stat">
+      <div class="stat-title">Median total target</div>
+      <div class="stat-value text-2xl tabular-nums"><%= money(summary.total_target.median, currency) %></div>
+      <div class="stat-desc">Gross + target variable pay</div>
+    </div>
+  </div>
+
+  <% if summary.headcount.zero? %>
+    <div class="card bg-base-100 shadow-sm">
+      <div class="card-body">
+        <p class="text-base-content/70">Nobody is currently employed in <%= country.name %>.</p>
+      </div>
+    </div>
+  <% else %>
+    <%= render "insights/groups", groups: @report.by_job_role, heading: "By job role", currency: %>
+    <%= render "insights/groups", groups: @report.by_department, heading: "By department", currency: %>
+  <% end %>
+</div>
