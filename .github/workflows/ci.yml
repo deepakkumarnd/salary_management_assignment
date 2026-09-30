@@ -79,7 +79,7 @@ jobs:
           bundler-cache: true
 
       - name: Prepare database and assets
-        run: bin/rails db:prepare tailwindcss:build
+        run: bin/rails db:test:prepare tailwindcss:build   # db:prepare would also run the seeds
 
       - name: Run specs
         run: bundle exec rspec
