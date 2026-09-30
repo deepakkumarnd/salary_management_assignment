@@ -1,0 +1,46 @@
+<% content_for :title, "Employee imports · Salary Management" %>
+
+<div class="space-y-4">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><%= link_to "Employees", employees_path %></li>
+      <li>Imports</li>
+    </ul>
+  </div>
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">Employee imports</h1>
+      <p class="text-base-content/70">The 25 most recent CSV uploads and what came of them.</p>
+    </div>
+    <%= link_to "Import employees", new_employee_import_path, class: "btn btn-primary" %>
+  </div>
+
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body">
+      <% if @imports.empty? %>
+        <p class="text-base-content/70">No files have been imported yet.</p>
+      <% else %>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+              <tr><th>When</th><th>Who</th><th>File</th><th>Status</th><th class="text-right">Rows</th><th class="text-right">Imported</th><th class="text-right">Skipped</th></tr>
+            </thead>
+            <tbody>
+              <% @imports.each do |import| %>
+                <tr>
+                  <td class="whitespace-nowrap"><%= local_time(import.created_at) %></td>
+                  <td><%= import.uploaded_by.full_name %></td>
+                  <td><%= link_to import.filename, employee_import_path(import), class: "link" %></td>
+                  <td><%= render "employee_imports/status", import: %></td>
+                  <td class="text-right tabular-nums"><%= import.total_rows ? number_with_delimiter(import.total_rows) : "–" %></td>
+                  <td class="text-right tabular-nums"><%= number_with_delimiter(import.created_count) %></td>
+                  <td class="text-right tabular-nums"><%= number_with_delimiter(import.skipped_count) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

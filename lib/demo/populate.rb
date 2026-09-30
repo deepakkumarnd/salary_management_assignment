@@ -127,13 +127,13 @@ module Demo
       departments = @organization.departments.index_by(&:name)
       structures = @organization.pay_structures.includes(:country).index_by { [ it.country_id, it.job_role_id ] }
       units = countries.to_h { [ it.id, COUNTRY_BASE.dig(it.name, 1) || 1_000 ] }
-      first_number = reserve_employee_numbers
+      numbers = EmployeeCode.reserve(@organization, @count)   # continues the sequence used in the UI
 
       Array.new(@count) do |index|
         country = weighted(countries.to_h { [ it, COUNTRY_WEIGHT.fetch(it.name, 5) ] })
         role = weighted(roles.to_h { [ it, ROLES.dig(it.name, 1) || 5 ] })
         department = departments[ROLES.dig(role.name, 2)] || departments.values[@random.rand(departments.size)]
-        number = first_number + index
+        number = numbers.begin + index
         first_name = Faker::Name.first_name
         last_name = Faker::Name.last_name
         hire_date = @today - @random.rand(0..(6 * 365))
@@ -142,21 +142,13 @@ module Demo
         starting = round_to(structures.fetch([ country.id, role.id ]).default_basic_pay * @random.rand(0.75..1.25), unit)
 
         Person.new(
-          code: format("%s-%05d", @organization.employee_code_prefix, number),
+          code: EmployeeCode.format_for(@organization, number),
           full_name: "#{first_name} #{last_name}",
           email: "#{first_name}.#{last_name}.#{number}@#{@organization.name.parameterize}.test".downcase.delete("'"),
           country:, job_role: role, department:, employment_type: weighted(EMPLOYMENT_TYPES), hire_date:,
           end_date:, exit_reason:, revisions: salary_history(hire_date, end_date, exit_reason, starting, unit)
         )
       end
-    end
-
-    # One atomic bump of the counter for the whole block, like EmployeeCode does for one employee.
-    def reserve_employee_numbers
-      sql = Organization.sanitize_sql_array([ <<~SQL, @count, @organization.id ])
-        UPDATE organizations SET next_employee_number = next_employee_number + ? WHERE id = ? RETURNING next_employee_number
-      SQL
-      Organization.with_connection { it.exec_query(sql).rows.first.first } - @count
     end
 
     # About 12% have left, 1% are serving notice (leaving in the next 60 days), 0.5% were recorded in error.

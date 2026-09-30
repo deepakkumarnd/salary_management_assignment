@@ -82,6 +82,7 @@ The data is the same on every run. Running it again adds more employees.
 | **Employees** | Search by name, email or employee ID; filter by country, department, job role and status; sort columns; open an employee. |
 | Employee page | Record a salary revision (backdated or scheduled), correct or void one, end employment and undo it, add deductions. |
 | **Add employee** | Pick a country and role: the starting basic is pre-filled and the pay breakdown updates as you type. |
+| **Employees → Import** | Upload a CSV of new employees (download the template first). It's imported in the background: watch the progress, then see which rows were skipped and why, and download them to fix. |
 | **Pay policy** | Change a country allowance or a role's pay structure and see gross and total target pay change. |
 | **Insights** | Pay ranges, averages, medians and total cost to company per country; drill down by job role and department. |
 | **Deductions** | Enter unpaid leave and other deductions for last month, this month or next month, row by row. |

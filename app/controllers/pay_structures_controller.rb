@@ -26,7 +26,8 @@ class PayStructuresController < AuthenticatedController
 
   def new
     @country = Current.organization.countries.find(params[:country_id])
-    @structure = Current.organization.pay_structures.build(country: @country, overtime_percent_bp: 15_000)
+    job_role = Current.organization.job_roles.find_by(id: params[:job_role_id])   # preselected, e.g. from an import
+    @structure = Current.organization.pay_structures.build(country: @country, job_role:, overtime_percent_bp: 15_000)
   end
 
   def create

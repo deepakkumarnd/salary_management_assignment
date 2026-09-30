@@ -8,7 +8,10 @@
       <h1 class="text-2xl font-bold">Employees</h1>
       <p class="text-base-content/70">Pay is annual, in local currency, as of today.</p>
     </div>
-    <%= link_to "Add employee", new_employee_path, class: "btn btn-primary" %>
+    <div class="flex gap-2">
+      <%= link_to "Import", employee_imports_path, class: "btn" %>
+      <%= link_to "Add employee", new_employee_path, class: "btn btn-primary" %>
+    </div>
   </div>
 
   <%# Each search is a Turbo Drive visit that advances the URL, so Back/Forward and bookmarks just work. %>

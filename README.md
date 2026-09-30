@@ -82,6 +82,9 @@ If you run `bin/rails server` on its own, first build the CSS once with `bin/rai
 
 Emails such as password resets aren't sent in development. Read them at http://localhost:3000/letter_opener.
 
+Background jobs (employee CSV imports) run inside the server process in development. In production they run on Solid
+Queue: start a worker with `bin/jobs`, or set `SOLID_QUEUE_IN_PUMA=1` to run it inside Puma.
+
 ## Running the tests
 
 The suite uses RSpec with FactoryBot, Faker, shoulda-matchers and Capybara.

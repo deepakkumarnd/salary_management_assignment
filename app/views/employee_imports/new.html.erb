@@ -1,0 +1,45 @@
+<% content_for :title, "Import employees · Salary Management" %>
+
+<div class="max-w-4xl mx-auto space-y-4">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><%= link_to "Employees", employees_path %></li>
+      <li><%= link_to "Imports", employee_imports_path %></li>
+      <li>Import employees</li>
+    </ul>
+  </div>
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-4">
+      <h1 class="card-title text-2xl">Import employees</h1>
+      <div class="text-base-content/70 space-y-2">
+        <p>
+          Upload a CSV with one new employee per row, up to <%= number_with_delimiter(EmployeeImport::MAX_ROWS) %> rows.
+          The first row must be the column names:
+          <code class="text-sm"><%= EmployeeImports::Row::COLUMNS.join(", ") %></code>.
+          Other columns (such as phone) are ignored.
+        </p>
+        <ul class="list-disc ms-5">
+          <li><strong>designation</strong> is the job role. New departments and job roles are created as needed.</li>
+          <li><strong>basic_pay</strong> is the annual basic in the country's currency, in whole units (12,00,000 is fine).</li>
+          <li><strong>hire_date</strong> is written as YYYY-MM-DD; blank means today. <strong>employment_type</strong> is
+              full_time, part_time or contractor; blank means full_time.</li>
+          <li>Rows are skipped, with the reason, if the email was ever used by an employee, the country isn't one you
+              operate in, the job role has no pay structure in that country yet, or a value isn't valid.</li>
+        </ul>
+      </div>
+
+      <%= form_with model: @import, url: employee_imports_path, class: "space-y-4" do |f| %>
+        <fieldset class="fieldset">
+          <%= f.label :file, "CSV file", class: "fieldset-legend" %>
+          <%= f.file_field :file, accept: ".csv,text/csv", required: true,
+                                  class: input_class(@import, :file, "file-input") %>
+          <%= field_errors(@import, :file) %>
+        </fieldset>
+        <div class="flex flex-wrap gap-2">
+          <%= f.submit "Upload and import", class: "btn btn-primary" %>
+          <%= link_to "Download template", template_employee_imports_path, class: "btn btn-ghost" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

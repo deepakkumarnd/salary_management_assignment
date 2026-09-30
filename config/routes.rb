@@ -34,6 +34,12 @@ Rails.application.routes.draw do
     resource :employment_end, only: %i[new create destroy]   # destroy = undo exit
   end
 
+  # CSV upload of new employees, imported in the background; show = progress and results
+  resources :employee_imports, only: %i[index new create show] do
+    get :template, on: :collection                                        # an empty CSV with the columns
+    resource :skipped_rows, only: :show, controller: "employee_import_skipped_rows"   # CSV download
+  end
+
   # Pay insights per operating country (current employees, as of today), with a role / department drill-down
   resources :insights, only: %i[index show], param: :country_id
 

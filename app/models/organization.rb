@@ -12,6 +12,7 @@ class Organization < ApplicationRecord
   has_many :salary_revisions
   has_many :payroll_deductions
   has_many :payroll_exports
+  has_many :employee_imports
 
   accepts_nested_attributes_for :country_allowances, allow_destroy: true, reject_if: :blank_allowance_row?
 

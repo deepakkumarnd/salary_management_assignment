@@ -1,0 +1,134 @@
+<% content_for :title, "Import of #{@import.filename} · Salary Management" %>
+<%# While the import runs, the page re-renders itself every few seconds; morphing keeps scroll position and focus. %>
+<% turbo_refreshes_with method: :morph, scroll: :preserve %>
+<% content_for :head, tag.meta(name: "turbo-cache-control", content: "no-cache") %>
+
+<div class="space-y-4">
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><%= link_to "Employees", employees_path %></li>
+      <li><%= link_to "Imports", employee_imports_path %></li>
+      <li><%= @import.filename %></li>
+    </ul>
+  </div>
+
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="card-title text-2xl">Import of <%= @import.filename %></h1>
+        <%= render "employee_imports/status", import: @import %>
+      </div>
+      <p class="text-base-content/70 text-sm">
+        Uploaded by <%= @import.uploaded_by.full_name %>, <%= local_time(@import.created_at) %><% if @import.finished_at %>;
+        finished <%= local_time(@import.finished_at) %><% end %>.
+      </p>
+
+      <% unless @import.finished? %>
+        <div data-controller="auto-refresh" role="status">
+          <progress class="progress progress-primary w-full" value="<%= @import.percent_done %>" max="100"
+                    aria-label="Import progress"></progress>
+          <p class="text-sm text-base-content/70 mt-1">
+            <% if @import.queued? %>
+              Waiting to start…
+            <% elsif @import.total_rows.nil? %>
+              Checking the file…
+            <% else %>
+              <%= number_with_delimiter(@import.processed_rows) %> of <%= number_with_delimiter(@import.total_rows) %> rows
+              (<%= @import.percent_done %>%). This page updates by itself; you can leave it and come back.
+            <% end %>
+          </p>
+        </div>
+      <% end %>
+
+      <% if @import.failed? %>
+        <div role="alert" class="alert alert-error alert-soft"><span><%= @import.error_message %></span></div>
+      <% end %>
+
+      <div class="stats stats-vertical sm:stats-horizontal border border-base-300">
+        <div class="stat">
+          <div class="stat-title">Rows in file</div>
+          <div class="stat-value text-2xl tabular-nums"><%= @import.total_rows ? number_with_delimiter(@import.total_rows) : "–" %></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">Imported</div>
+          <div class="stat-value text-2xl tabular-nums text-success"><%= number_with_delimiter(@import.created_count) %></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">Skipped</div>
+          <div class="stat-value text-2xl tabular-nums <%= "text-error" if @import.skipped_count.positive? %>"><%= number_with_delimiter(@import.skipped_count) %></div>
+        </div>
+      </div>
+
+      <% if @import.new_departments.any? || @import.new_job_roles.any? %>
+        <div class="text-sm space-y-1">
+          <% if @import.new_departments.any? %>
+            <p><span class="font-semibold">New departments:</span> <%= @import.new_departments.join(", ") %></p>
+          <% end %>
+          <% if @import.new_job_roles.any? %>
+            <p><span class="font-semibold">New job roles:</span> <%= @import.new_job_roles.join(", ") %></p>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @import.missing_pay_structures.any? %>
+    <section class="card bg-base-100 shadow-sm" aria-labelledby="missing-pay-structures">
+      <div class="card-body">
+        <h2 id="missing-pay-structures" class="card-title">Pay structures needed</h2>
+        <p class="text-base-content/70">
+          These rows were skipped because their job role has no pay structure in that country. Create the pay structures,
+          then download the skipped rows and upload them again.
+        </p>
+        <ul class="space-y-2">
+          <% @import.missing_pay_structures.each do |missing| %>
+            <li class="flex flex-wrap items-center gap-3">
+              <span><%= missing["job_role"] %> in <%= missing["country"] %>
+                (<%= pluralize(number_with_delimiter(missing["rows"]), "row") %>)</span>
+              <% if @existing_pay_structures.include?([ missing["country_id"], missing["job_role_id"] ]) %>
+                <span class="badge badge-success badge-soft">Created</span>
+              <% else %>
+                <%= link_to "Create pay structure", new_pay_structure_path(country_id: missing["country_id"], job_role_id: missing["job_role_id"]),
+                            class: "btn btn-sm" %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @import.skipped_count.positive? %>
+    <section class="card bg-base-100 shadow-sm" aria-labelledby="skipped-rows">
+      <div class="card-body">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="skipped-rows" class="card-title">Skipped rows</h2>
+          <%= link_to "Download skipped rows (CSV)", employee_import_skipped_rows_path(@import, format: :csv),
+                      class: "btn btn-sm", data: { turbo: false } %>
+        </div>
+        <p class="text-base-content/70 text-sm">
+          The download has the same columns as the upload, plus each row's original row number and reasons: fix the rows
+          and upload the file again.
+        </p>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead><tr><th class="text-right">Row</th><th>Name</th><th>Email</th><th>Reasons</th></tr></thead>
+            <tbody>
+              <% @skipped_rows.each do |row| %>
+                <tr>
+                  <td class="text-right tabular-nums"><%= row.row_number %></td>
+                  <td><%= row.data["name"] %></td>
+                  <td><%= row.email %></td>
+                  <td>
+                    <ul class="list-disc ms-4"><% row.reasons.each do |reason| %><li><%= reason %></li><% end %></ul>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <%= render "components/pagination", pagy: @pagy if @pagy.pages > 1 %>
+      </div>
+    </section>
+  <% end %>
+</div>

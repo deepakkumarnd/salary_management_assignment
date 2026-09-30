@@ -10,7 +10,35 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_180002) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_100001) do
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
   create_table "countries", force: :cascade do |t|
     t.string "name", null: false
     t.string "currency_code", limit: 3, null: false
@@ -41,6 +69,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_180002) do
     t.datetime "updated_at", null: false
     t.index ["organization_id", "name"], name: "index_departments_on_organization_id_and_name", unique: true
     t.index ["organization_id"], name: "index_departments_on_organization_id"
+  end
+
+  create_table "employee_import_skipped_rows", force: :cascade do |t|
+    t.integer "employee_import_id", null: false
+    t.integer "row_number", null: false
+    t.string "email"
+    t.json "data", default: {}, null: false
+    t.json "reasons", default: [], null: false
+    t.index ["employee_import_id", "row_number"], name: "idx_on_employee_import_id_row_number_cedfd1a704", unique: true
+  end
+
+  create_table "employee_imports", force: :cascade do |t|
+    t.integer "organization_id", null: false
+    t.integer "uploaded_by_id", null: false
+    t.string "status", default: "queued", null: false
+    t.integer "total_rows"
+    t.integer "processed_rows", default: 0, null: false
+    t.integer "created_count", default: 0, null: false
+    t.integer "skipped_count", default: 0, null: false
+    t.json "new_departments", default: [], null: false
+    t.json "new_job_roles", default: [], null: false
+    t.json "missing_pay_structures", default: [], null: false
+    t.string "error_message"
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "created_at"], name: "index_employee_imports_on_organization_id_and_created_at"
+    t.index ["uploaded_by_id"], name: "index_employee_imports_on_uploaded_by_id"
+    t.check_constraint "status IN ('queued','processing','completed','failed')", name: "employee_imports_status"
   end
 
   create_table "employees", force: :cascade do |t|
@@ -222,10 +280,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_180002) do
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "country_allowances", "countries", on_delete: :restrict
   add_foreign_key "country_allowances", "organizations", on_delete: :cascade
   add_foreign_key "country_allowances", "users", column: "updated_by_id", on_delete: :nullify
   add_foreign_key "departments", "organizations", on_delete: :cascade
+  add_foreign_key "employee_import_skipped_rows", "employee_imports", on_delete: :cascade
+  add_foreign_key "employee_imports", "organizations", on_delete: :cascade
+  add_foreign_key "employee_imports", "users", column: "uploaded_by_id", on_delete: :restrict
   add_foreign_key "employees", "countries", on_delete: :restrict
   add_foreign_key "employees", "departments", on_delete: :restrict
   add_foreign_key "employees", "organizations", on_delete: :cascade

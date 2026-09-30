@@ -1,0 +1,3 @@
+<%# locals: (import:) %>
+<% style = { "queued" => "badge-ghost", "processing" => "badge-info", "completed" => "badge-success", "failed" => "badge-error" } %>
+<span class="badge <%= style.fetch(import.status) %>"><%= import.status.humanize %></span>
